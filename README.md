@@ -4,7 +4,7 @@
 ![Python](https://img.shields.io/badge/python-3.12%2B-blue)
 ![Flask](https://img.shields.io/badge/flask-3-lightgrey)
 
-**[🔗 Demonstração online](https://agendamed.onrender.com)** · **[📖 Documentação da API](https://agendamed.onrender.com/docs)**
+**[🔗 Demonstração online](https://agendamed-6pfk.onrender.com)** · **[📖 Documentação da API](https://agendamed-6pfk.onrender.com/docs)**
 
 Sistema de **agendamento de consultas médicas**: uma API REST com autenticação JWT e regras
 de agenda reais (expediente, grade de horários, conflitos de médico e paciente), uma
