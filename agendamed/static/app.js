@@ -211,6 +211,10 @@ const api = {
   post(path, body = {}) {
     return this.request("POST", path, body);
   },
+
+  del(path) {
+    return this.request("DELETE", path);
+  },
 };
 
 /* ===================== 3. Estado, sessão e avisos ===================== */
@@ -1409,13 +1413,16 @@ async function renderDoctors(main, isCurrent) {
             { label: "Consulta", class: "num", render: (d) => `${d.slot_minutes} min` },
             {
               label: "Ações", class: "actions",
-              render: (d) => h("button", {
-                class: "btn btn--ghost btn--small", type: "button",
-                onclick: () => {
-                  Object.assign(state.agenda, { doctorId: d.id, selectedKey: null });
-                  location.hash = "#/agenda";
-                },
-              }, "Ver agenda"),
+              render: (d) => [
+                h("button", {
+                  class: "btn btn--ghost btn--small", type: "button",
+                  onclick: () => {
+                    Object.assign(state.agenda, { doctorId: d.id, selectedKey: null });
+                    location.hash = "#/agenda";
+                  },
+                }, "Ver agenda"),
+                confirmButton("Remover", "Confirmar remoção", () => removeDoctor(d), "btn--small"),
+              ],
             },
           ],
         }),
@@ -1423,6 +1430,19 @@ async function renderDoctors(main, isCurrent) {
           f.offset = offset;
           load();
         }));
+    } catch (err) {
+      handleError(err);
+    }
+  }
+
+  /* Remove o médico. Com consultas futuras, o servidor recusa e explica o motivo. */
+  async function removeDoctor(doctor) {
+    try {
+      await api.del(`/doctors/${doctor.id}`);
+      state.doctors = null;
+      if (state.agenda.doctorId === doctor.id) state.agenda.doctorId = null;
+      toast(`${doctor.name} foi removido(a). As consultas antigas continuam no histórico.`);
+      load();
     } catch (err) {
       handleError(err);
     }

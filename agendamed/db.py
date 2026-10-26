@@ -47,7 +47,16 @@ def transaction(conn: sqlite3.Connection, *, immediate: bool = False) -> Iterato
 
 
 def init_db() -> None:
-    get_db().executescript(SCHEMA_PATH.read_text(encoding="utf-8"))
+    conn = get_db()
+    conn.executescript(SCHEMA_PATH.read_text(encoding="utf-8"))
+    _upgrade(conn)
+
+
+def _upgrade(conn) -> None:
+    """Ajusta bancos criados por versões anteriores (CREATE TABLE IF NOT EXISTS não altera)."""
+    columns = {row["name"] for row in conn.execute("PRAGMA table_info(doctors)")}
+    if "active" not in columns:
+        conn.execute("ALTER TABLE doctors ADD COLUMN active INTEGER NOT NULL DEFAULT 1")
 
 
 @click.command("init-db")

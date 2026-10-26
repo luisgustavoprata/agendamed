@@ -74,6 +74,21 @@ class UserRepository(Repository):
 
 class DoctorRepository(Repository):
     def create(self, data) -> Doctor:
+        removed = self.conn.execute(
+            "SELECT id FROM doctors WHERE crm = ? AND active = 0", (data.crm,)
+        ).fetchone()
+        if removed is not None:
+            # O CRM é de um médico removido: ele volta, com os dados novos e o histórico antigo.
+            self.conn.execute(
+                """UPDATE doctors SET name = ?, specialty = ?, slot_minutes = ?, work_start = ?,
+                   work_end = ?, active = 1 WHERE id = ?""",
+                (
+                    data.name, data.specialty, data.slot_minutes,
+                    data.work_start.strftime("%H:%M"), data.work_end.strftime("%H:%M"),
+                    removed["id"],
+                ),
+            )
+            return self.get(removed["id"])
         doctor_id = self._insert(
             """INSERT INTO doctors (name, specialty, crm, slot_minutes, work_start, work_end)
                VALUES (?, ?, ?, ?, ?, ?)""",
@@ -90,11 +105,24 @@ class DoctorRepository(Repository):
         return self.get(doctor_id)
 
     def get(self, doctor_id: int) -> Doctor | None:
-        row = self.conn.execute("SELECT * FROM doctors WHERE id = ?", (doctor_id,)).fetchone()
+        """Só médicos ativos: um médico removido não aparece nem recebe consultas."""
+        row = self.conn.execute(
+            "SELECT * FROM doctors WHERE id = ? AND active = 1", (doctor_id,)
+        ).fetchone()
         return Doctor.from_row(row) if row else None
 
+    def count_future_appointments(self, doctor_id: int, now: datetime) -> int:
+        return self.conn.execute(
+            """SELECT COUNT(*) FROM appointments
+               WHERE doctor_id = ? AND status = 'scheduled' AND start_at > ?""",
+            (doctor_id, to_db_datetime(now)),
+        ).fetchone()[0]
+
+    def deactivate(self, doctor_id: int) -> None:
+        self.conn.execute("UPDATE doctors SET active = 0 WHERE id = ?", (doctor_id,))
+
     def list(self, *, specialty: str | None, limit: int, offset: int) -> Page:
-        where, params = [], []
+        where, params = ["active = 1"], []
         if specialty:
             where.append("specialty LIKE ?")
             params.append(f"%{specialty}%")

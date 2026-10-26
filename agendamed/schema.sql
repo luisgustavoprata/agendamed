@@ -16,7 +16,9 @@ CREATE TABLE IF NOT EXISTS doctors (
     crm          TEXT    NOT NULL UNIQUE,
     slot_minutes INTEGER NOT NULL DEFAULT 30 CHECK (slot_minutes BETWEEN 10 AND 240),
     work_start   TEXT    NOT NULL DEFAULT '08:00',
-    work_end     TEXT    NOT NULL DEFAULT '18:00'
+    work_end     TEXT    NOT NULL DEFAULT '18:00',
+    -- 0 = removido: some das listas e da agenda, mas o histórico de consultas continua.
+    active       INTEGER NOT NULL DEFAULT 1
 );
 
 CREATE TABLE IF NOT EXISTS patients (

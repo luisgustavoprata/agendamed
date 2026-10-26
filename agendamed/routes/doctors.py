@@ -1,7 +1,7 @@
 from flask import Blueprint, request, url_for
 
 from agendamed.db import get_db
-from agendamed.errors import NotFoundError
+from agendamed.errors import ConflictError, NotFoundError
 from agendamed.models import to_api_datetime
 from agendamed.repositories import DoctorRepository
 from agendamed.routes._helpers import now, pagination, parse_body, query_date, require_auth
@@ -34,6 +34,23 @@ def get_doctor(doctor_id: int):
     if doctor is None:
         raise NotFoundError("Médico não encontrado.")
     return doctor.to_dict()
+
+
+@bp.delete("/<int:doctor_id>")
+def delete_doctor(doctor_id: int):
+    """Remove o médico das listas e da agenda. As consultas antigas continuam no histórico."""
+    conn = get_db()
+    doctors = DoctorRepository(conn)
+    if doctors.get(doctor_id) is None:
+        raise NotFoundError("Médico não encontrado.")
+    pending = doctors.count_future_appointments(doctor_id, now())
+    if pending:
+        noun = "consulta marcada" if pending == 1 else "consultas marcadas"
+        raise ConflictError(
+            f"Este médico tem {pending} {noun}. Cancele ou remarque antes de remover."
+        )
+    doctors.deactivate(doctor_id)
+    return "", 204
 
 
 @bp.get("/<int:doctor_id>/availability")

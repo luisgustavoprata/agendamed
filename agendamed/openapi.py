@@ -173,9 +173,14 @@ def _paths() -> dict:
             "post": _op("Cadastra um médico", "Médicos", ok=201, ok_schema="Doctor",
                         body="DoctorCreate", errors=(400, 409, 422)),
         },
-        "/doctors/{doctor_id}": {"get": _op(
-            "Detalhes de um médico", "Médicos", ok=200, ok_schema="Doctor", params=[doctor_id],
-            errors=(404,))},
+        "/doctors/{doctor_id}": {
+            "get": _op("Detalhes de um médico", "Médicos", ok=200, ok_schema="Doctor",
+                       params=[doctor_id], errors=(404,)),
+            "delete": _op(
+                "Remove um médico", "Médicos", ok=204, params=[doctor_id], errors=(404, 409),
+                description="Some das listas e da agenda; as consultas antigas continuam no "
+                            "histórico. Recusado (409) se houver consultas futuras marcadas."),
+        },
         "/doctors/{doctor_id}/availability": {"get": _op(
             "Horários livres do médico em um dia", "Médicos", ok=200, ok_schema="Availability",
             params=[doctor_id, _param("date", "query", day, "Dia (AAAA-MM-DD).", required=True)],
