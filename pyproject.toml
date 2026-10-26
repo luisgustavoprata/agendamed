@@ -1,0 +1,22 @@
+[project]
+name = "agendamed"
+version = "1.0.0"
+description = "API REST para agendamento de consultas médicas"
+readme = "README.md"
+requires-python = ">=3.12"
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+# pycodestyle, pyflakes, bugbear e pyupgrade
+select = ["E", "F", "W", "B", "UP"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+
+[tool.coverage.run]
+source = ["agendamed"]
+omit = ["agendamed/seed.py"]

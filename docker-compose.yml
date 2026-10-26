@@ -1,0 +1,14 @@
+services:
+  api:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      SECRET_KEY: ${SECRET_KEY:?Defina SECRET_KEY no arquivo .env}
+      TOKEN_EXPIRES_MINUTES: ${TOKEN_EXPIRES_MINUTES:-60}
+    volumes:
+      - agendamed-data:/data
+    restart: unless-stopped
+
+volumes:
+  agendamed-data:

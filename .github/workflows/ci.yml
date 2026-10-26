@@ -1,0 +1,40 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    name: Lint e testes (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+          cache-dependency-path: requirements-dev.txt
+
+      - name: Instalar dependências
+        run: pip install -r requirements-dev.txt
+
+      - name: Lint (ruff)
+        run: ruff check .
+
+      - name: Testes com cobertura
+        run: pytest --cov --cov-report=term-missing
+
+  docker:
+    name: Build da imagem Docker
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build
+        run: docker build -t agendamed .

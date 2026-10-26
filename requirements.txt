@@ -1,0 +1,5 @@
+Flask>=3.0,<4
+pydantic>=2.7,<3
+PyJWT>=2.8,<3
+gunicorn>=22,<24
+tzdata>=2024.1  # base de fusos horários para o zoneinfo em imagens Docker enxutas

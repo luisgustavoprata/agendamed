@@ -1,0 +1,23 @@
+# Blueprint do Render: descreve o serviço como código.
+# Uso: no painel do Render, New > Blueprint e escolha este repositório,
+# ou clique no botão "Deploy to Render" do README.
+services:
+  - type: web
+    name: agendamed
+    runtime: docker
+    plan: free
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: SECRET_KEY
+        generateValue: true          # o Render gera uma chave aleatória e segura
+      - key: SEED_DEMO_DATA
+        value: "true"                # demonstração pública já com médicos e consultas
+      - key: CLINIC_TIMEZONE
+        value: America/Sao_Paulo
+      - key: TRUST_PROXY
+        value: "true"                # o Render fica na frente como proxy reverso
+      - key: PASSWORD_HASH_ITERATIONS
+        value: "100000"              # menor custo para a CPU limitada do plano gratuito
+      - key: WEB_CONCURRENCY
+        value: "2"
