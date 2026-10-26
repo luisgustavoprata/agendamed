@@ -20,3 +20,8 @@ class FrontendTest(APITestCase):
         response = self.client.post("/auth/register", json={"email": "a@b.com"})
         messages = {error["field"]: error["message"] for error in response.json["errors"]}
         self.assertEqual(messages["password"], "Campo obrigatório.")
+
+    def test_health_reports_demo_mode(self):
+        self.assertIs(self.client.get("/health").json["demo"], False)
+        self.app.config["SEED_DEMO_DATA"] = True
+        self.assertIs(self.client.get("/health").json["demo"], True)

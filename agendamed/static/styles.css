@@ -351,10 +351,90 @@ select.input { padding-right: 32px; }
 
 .loading { padding: 48px; text-align: center; color: var(--ink-faint); }
 
+/* ---------- Login de demonstração ---------- */
+
+.btn--large { min-height: 52px; font-size: 17px; }
+.demo-entry { display: grid; gap: 10px; }
+.demo-entry__hint { font-size: 14px; color: var(--ink-soft); }
+.login__divider {
+  display: flex; align-items: center; gap: 12px; margin-top: 6px;
+  font-size: 14px; color: var(--ink-faint);
+}
+.login__divider::before, .login__divider::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+
+/* ---------- Agendar (fluxo guiado) ---------- */
+
+.booking { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 24px; align-items: start; }
+.booking__steps { display: grid; gap: 20px; min-width: 0; }
+
+.step {
+  display: grid; gap: 18px; min-width: 0; padding: 22px;
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-l);
+}
+.step--locked { background: transparent; border-style: dashed; }
+.step--locked .step__title { color: var(--ink-faint); }
+.step__head { display: flex; gap: 14px; align-items: flex-start; }
+.step__num {
+  flex: none; width: 34px; height: 34px; border-radius: 50%;
+  display: grid; place-items: center;
+  background: var(--pine); color: #fff; font-weight: 700;
+}
+.step--locked .step__num { background: var(--slate-wash); color: var(--ink-faint); }
+.step__title { font-size: 19px; line-height: 1.3; }
+.step__hint { margin-top: 2px; color: var(--ink-soft); font-size: 15px; }
+.step__empty { color: var(--ink-soft); }
+
+.choice-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 12px; }
+.choice {
+  display: grid; gap: 3px; padding: 14px 16px; text-align: left; cursor: pointer;
+  background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--radius-m);
+}
+.choice:hover { border-color: var(--ink-faint); }
+.choice[aria-pressed="true"] { border-color: var(--pine); background: var(--pine-wash); box-shadow: inset 0 0 0 1px var(--pine); }
+.choice__title { font-size: 17px; font-weight: 700; }
+.choice__meta { font-size: 14px; font-weight: 700; color: var(--pine); }
+.choice__foot { font-size: 14px; color: var(--ink-faint); }
+
+.day-strip { display: flex; gap: 8px; overflow-x: auto; padding: 2px 2px 6px; scrollbar-width: thin; }
+.day-chip {
+  flex: none; display: grid; gap: 1px; min-width: 96px; padding: 9px 12px; text-align: left; cursor: pointer;
+  background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--radius-m);
+}
+.day-chip:hover:not(:disabled) { border-color: var(--pine); }
+.day-chip__day { font-weight: 700; }
+.day-chip__count { font-size: 13px; color: var(--ink-faint); }
+.day-chip[aria-pressed="true"] { background: var(--pine); border-color: var(--pine); color: #fff; }
+.day-chip[aria-pressed="true"] .day-chip__count { color: #d3e9e1; }
+.day-chip:disabled { cursor: not-allowed; background: var(--paper); color: var(--ink-faint); }
+
+/* Horários livres tracejados, como os horários livres da régua da agenda. */
+.time-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(82px, 1fr)); gap: 8px; }
+.time-btn {
+  min-height: 44px; cursor: pointer; font-weight: 700; font-variant-numeric: tabular-nums;
+  background: var(--surface); border: 1px dashed var(--line-strong); border-radius: var(--radius-s);
+}
+.time-btn:hover { border-style: solid; border-color: var(--pine); background: var(--pine-wash); color: var(--pine-deep); }
+.time-btn[aria-pressed="true"] { border: 1px solid var(--pine); background: var(--pine); color: #fff; }
+
+.picker--wide { max-height: 300px; }
+.step, .summary, .panel { scroll-margin-top: 24px; }
+
+.summary .details dd { font-weight: 700; }
+.summary .details dd.is-empty { font-weight: 400; color: var(--ink-faint); }
+.summary__hint { font-size: 14px; color: var(--ink-soft); text-align: center; }
+
+.success { display: grid; gap: 6px; justify-items: start; }
+.success__icon {
+  width: 52px; height: 52px; margin-bottom: 6px; border-radius: 50%;
+  display: grid; place-items: center; background: var(--pine); color: #fff;
+}
+.success__icon svg { width: 28px; height: 28px; }
+.success__actions { display: grid; gap: 10px; }
+
 /* ---------- Responsivo ---------- */
 
 @media (max-width: 1100px) {
-  .agenda { grid-template-columns: minmax(0, 1fr); }
+  .agenda, .booking { grid-template-columns: minmax(0, 1fr); }
   .panel { position: static; }
 }
 
@@ -375,8 +455,11 @@ select.input { padding-right: 32px; }
   .sidebar__docs { display: none; }
   .sidebar__user { order: 2; margin: 0 0 0 auto; padding: 0; border: 0; }
   .sidebar__user-name, .sidebar__user-email { display: none; }
-  .nav { order: 3; flex: 1 1 100%; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; }
-  .nav__link { justify-content: center; min-height: 40px; padding: 0 4px; font-size: 15px; }
+  .nav { order: 3; flex: 1 1 100%; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 2px; }
+  .nav__link { justify-content: center; min-height: 40px; padding: 0 2px; font-size: 13.5px; }
+  .step { padding: 18px 16px; }
+  /* Compensa a barra superior fixa ao rolar até uma etapa. */
+  .step, .summary, .panel { scroll-margin-top: 132px; }
   .nav__link svg { display: none; }
 
   .daybar__nav { width: 100%; }

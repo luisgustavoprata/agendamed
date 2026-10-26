@@ -11,7 +11,7 @@ from agendamed.config import DEFAULT_SECRET_KEY, Config
 from agendamed.ratelimit import LoginRateLimiter
 from agendamed.routes import appointments, auth, docs, doctors, patients
 
-__version__ = "1.1.0"
+__version__ = "1.2.0"
 
 # Política de segurança de conteúdo: só carrega scripts do próprio site e do CDN do
 # Swagger UI, e impede que a página seja exibida dentro de iframes de outros sites.
@@ -63,7 +63,8 @@ def create_app(config: dict | None = None) -> Flask:
 
     @app.get("/health")
     def health():
-        return {"status": "ok", "version": __version__}
+        # "demo" avisa a interface que existe uma conta de demonstração pronta.
+        return {"status": "ok", "version": __version__, "demo": app.config["SEED_DEMO_DATA"]}
 
     @app.after_request
     def security_headers(response):

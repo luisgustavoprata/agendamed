@@ -42,6 +42,8 @@ const ICONS = {
   right: '<path d="M9 5l7 7-7 7"/>',
   close: '<path d="M6 6l12 12M18 6L6 18"/>',
   plus: '<path d="M12 5v14M5 12h14"/>',
+  check: '<path d="M5 12.5l4.5 4.5L19 7.5"/>',
+  book: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4M12 13v5M9.5 15.5h5"/>',
 };
 
 function icon(name) {
@@ -51,6 +53,11 @@ function icon(name) {
   // Conteúdo fixo, definido acima — nunca dados do usuário.
   wrap.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${ICONS[name]}</svg>`;
   return wrap;
+}
+
+/** Substitui o conteúdo de um elemento, ignorando itens vazios (null, false, undefined). */
+function fill(el, ...children) {
+  el.replaceChildren(...children.flat(Infinity).filter((c) => c !== null && c !== undefined && c !== false));
 }
 
 function debounce(fn, wait = 250) {
@@ -218,6 +225,8 @@ const state = {
 };
 
 const PAGE_SIZE = 20;
+const DEMO_EMAIL = "admin@agendamed.dev";
+const DEMO_PASSWORD = "admin12345";
 
 const session = {
   async start() {
@@ -235,7 +244,7 @@ const session = {
     const { access_token: token } = await api.post("/auth/login", { email, password });
     api.token = token;
     state.user = await api.get("/auth/me");
-    if (!location.hash) location.hash = "#/agenda";
+    if (!location.hash) location.hash = "#/agendar";
     renderShell();
   },
 
@@ -533,6 +542,26 @@ function renderLogin() {
 
   const card = h("div", { class: "login__card" });
   const panel = h("main", { class: "login__panel" }, card);
+  let demoMode = false;
+
+  // Em modo demonstração (SEED_DEMO_DATA), o servidor avisa pelo /health e a tela
+  // oferece entrada com um clique, sem precisar criar conta.
+  api.get("/health").then((info) => {
+    demoMode = Boolean(info?.demo);
+    if (demoMode && mode === "login") draw();
+  }).catch(() => {});
+
+  async function enterDemo(button) {
+    button.disabled = true;
+    button.textContent = "Entrando…";
+    try {
+      await session.login(DEMO_EMAIL, DEMO_PASSWORD);
+    } catch (err) {
+      toast(err.message, "error");
+      button.disabled = false;
+      button.textContent = "Entrar na demonstração";
+    }
+  }
 
   function draw() {
     const isLogin = mode === "login";
@@ -549,7 +578,9 @@ function renderLogin() {
         autocomplete: isLogin ? "current-password" : "new-password",
         hint: isLogin ? null : "Mínimo de 8 caracteres",
       }),
-      h("button", { class: "btn btn--primary btn--block", type: "submit" }, isLogin ? "Entrar" : "Criar conta"));
+      h("button", {
+        class: `btn ${isLogin && demoMode ? "btn--ghost" : "btn--primary"} btn--block`, type: "submit",
+      }, isLogin ? "Entrar" : "Criar conta"));
 
     form.addEventListener("submit", async (event) => {
       event.preventDefault();
@@ -567,20 +598,32 @@ function renderLogin() {
       }
     });
 
-    const demo = isLogin && h("div", { class: "demo-note" },
+    const demoNote = isLogin && !demoMode && h("div", { class: "demo-note" },
       "Rodou o comando ", h("strong", null, "seed"), "? Entre com a conta de demonstração. ",
       h("button", {
         class: "link-btn", type: "button",
         onclick: () => {
-          form.elements.email.value = "admin@agendamed.dev";
-          form.elements.password.value = "admin12345";
+          form.elements.email.value = DEMO_EMAIL;
+          form.elements.password.value = DEMO_PASSWORD;
           form.querySelector('[type="submit"]').focus();
         },
       }, "Preencher dados de demonstração"));
 
-    card.replaceChildren(
+    let demoBlock = null;
+    if (isLogin && demoMode) {
+      const demoButton = h("button", { class: "btn btn--primary btn--block btn--large", type: "button" },
+        "Entrar na demonstração");
+      demoButton.addEventListener("click", () => enterDemo(demoButton));
+      demoBlock = h("div", { class: "demo-entry" },
+        demoButton,
+        h("p", { class: "demo-entry__hint" },
+          "Acesso imediato, sem cadastro, a uma clínica de exemplo com médicos, pacientes e consultas."),
+        h("p", { class: "login__divider" }, "ou entre com a sua conta"));
+    }
+
+    fill(card, 
       h("h1", { class: "login__heading" }, isLogin ? "Entrar na sua conta" : "Criar uma conta"),
-      tabs, form, demo);
+      tabs, demoBlock, form, demoNote);
   }
 
   function switchTo(next) {
@@ -590,13 +633,300 @@ function renderLogin() {
   }
 
   draw();
-  root().replaceChildren(h("div", { class: "login" }, brand, panel));
+  fill(root(), h("div", { class: "login" }, brand, panel));
+}
+
+/* ---------- Agendar (fluxo guiado) ---------- */
+
+const chipDateFmt = new Intl.DateTimeFormat("pt-BR", { weekday: "short", day: "2-digit", month: "2-digit" });
+
+/** Os próximos `count` dias úteis, começando por hoje se hoje for dia útil. */
+function upcomingWorkingDays(count) {
+  const days = [];
+  let day = new Date();
+  day.setHours(0, 0, 0, 0);
+  while (days.length < count) {
+    if (!isWeekend(day)) days.push(new Date(day));
+    day = addDays(day, 1);
+  }
+  return days;
+}
+
+async function renderBooking(main, isCurrent) {
+  fill(main, loading());
+  let doctors;
+  try {
+    doctors = await getDoctors();
+  } catch (err) {
+    handleError(err);
+    return;
+  }
+  if (!isCurrent()) return;
+
+  // Escolhas da pessoa ao longo das etapas.
+  const b = { doctor: null, date: null, slot: null, patient: null, days: [] };
+
+  const doctorStep = h("section", { class: "step", "aria-labelledby": "step-doctor" });
+  const timeStep = h("section", { class: "step step--locked", "aria-labelledby": "step-time" });
+  const patientStep = h("section", { class: "step step--locked", "aria-labelledby": "step-patient" });
+  const summary = h("aside", { class: "panel summary", "aria-label": "Resumo do agendamento" });
+
+  fill(main, 
+    pageHead("Agendar consulta", "Escolha o médico, o horário e o paciente. O resumo ao lado mostra o que será marcado."),
+    h("div", { class: "booking" }, h("div", { class: "booking__steps" }, doctorStep, timeStep, patientStep), summary));
+
+  function stepHead(number, id, title, hint) {
+    return h("header", { class: "step__head" },
+      h("span", { class: "step__num", "aria-hidden": "true" }, number),
+      h("div", null,
+        h("h2", { class: "step__title", id }, title),
+        hint && h("p", { class: "step__hint" }, hint)));
+  }
+
+  /* Etapa 1: médico */
+  function drawDoctors() {
+    if (doctors.length === 0) {
+      fill(doctorStep, 
+        stepHead(1, "step-doctor", "Escolha o médico"),
+        h("p", { class: "step__empty" }, "Nenhum médico cadastrado ainda."),
+        h("div", null, h("button", {
+          class: "btn btn--primary", type: "button",
+          onclick: () => openDoctorDialog(() => navigate()),
+        }, icon("plus"), "Cadastrar médico")));
+      return;
+    }
+    fill(doctorStep, 
+      stepHead(1, "step-doctor", "Escolha o médico", b.doctor ? null : "Toque no profissional para ver os horários livres."),
+      h("div", { class: "choice-grid", role: "group", "aria-label": "Médicos" },
+        doctors.map((d) => h("button", {
+          class: "choice", type: "button", "aria-pressed": String(b.doctor?.id === d.id),
+          onclick: () => chooseDoctor(d),
+        },
+          h("span", { class: "choice__title" }, d.name),
+          h("span", { class: "choice__meta" }, d.specialty),
+          h("span", { class: "choice__foot" }, `Atende das ${d.work_start} às ${d.work_end}`),
+          h("span", { class: "choice__foot" }, `Consultas de ${d.slot_minutes} minutos`)))));
+  }
+
+  /* Etapa 2: dia e horário */
+  let daysSeq = 0;
+  async function chooseDoctor(doctor) {
+    b.doctor = doctor;
+    b.slot = null;
+    b.days = [];
+    drawDoctors();
+    drawSummary();
+    timeStep.className = "step";
+    fill(timeStep, stepHead(2, "step-time", "Escolha o dia e o horário"), loading("Buscando horários livres…"));
+
+    const seq = ++daysSeq;
+    const days = upcomingWorkingDays(10);
+    try {
+      const results = await Promise.all(days.map((day) =>
+        api.get(`/doctors/${doctor.id}/availability`, { date: toISODate(day) })));
+      if (seq !== daysSeq || !isCurrent()) return;
+      b.days = days.map((day, i) => ({ day, iso: toISODate(day), slots: results[i].available_slots }));
+      const firstWithSlots = b.days.find((d) => d.slots.length > 0);
+      b.date = (firstWithSlots || b.days[0]).iso;
+      drawTimes();
+      if (window.matchMedia("(max-width: 1100px)").matches) {
+        timeStep.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    } catch (err) {
+      if (seq !== daysSeq) return;
+      handleError(err);
+      fill(timeStep, stepHead(2, "step-time", "Escolha o dia e o horário"),
+        h("p", { class: "step__empty" }, err.message));
+    }
+  }
+
+  function drawTimes() {
+    const current = b.days.find((d) => d.iso === b.date);
+    const strip = h("div", { class: "day-strip", role: "group", "aria-label": "Dias" },
+      b.days.map((d) => h("button", {
+        class: "day-chip", type: "button", "aria-pressed": String(d.iso === b.date), disabled: d.slots.length === 0,
+        onclick: () => {
+          b.date = d.iso;
+          b.slot = null;
+          drawTimes();
+          drawSummary();
+        },
+      },
+        h("span", { class: "day-chip__day" }, capitalize(chipDateFmt.format(d.day).replace(".", ""))),
+        h("span", { class: "day-chip__count" }, d.slots.length ? plural(d.slots.length, "livre", "livres") : "Sem vagas"))));
+
+    const times = current.slots.length
+      ? h("div", { class: "time-grid", role: "group", "aria-label": "Horários livres" },
+        current.slots.map((key) => h("button", {
+          class: "time-btn", type: "button", "aria-pressed": String(b.slot === key),
+          onclick: () => {
+            b.slot = key;
+            drawTimes();
+            drawSummary();
+            unlockPatients();
+          },
+        }, fmtTime(parseLocal(key)))))
+      : h("p", { class: "step__empty" }, "Sem horários livres neste dia. Escolha outro dia acima.");
+
+    fill(timeStep, 
+      stepHead(2, "step-time", "Escolha o dia e o horário", fmtLongDate(parseISODate(b.date))),
+      strip, times);
+  }
+
+  /* Etapa 3: paciente */
+  let patientsReady = false;
+  function unlockPatients() {
+    if (patientsReady) return;
+    patientsReady = true;
+    patientStep.className = "step";
+
+    const search = h("input", {
+      class: "input", type: "search", id: "booking-search", placeholder: "Buscar por nome ou CPF", autocomplete: "off",
+    });
+    const results = h("div", { class: "picker picker--wide", role: "group", "aria-label": "Pacientes encontrados" });
+    const notes = h("textarea", {
+      class: "input", id: "booking-notes", maxlength: "500", placeholder: "Motivo da consulta, retorno, exames…",
+    });
+    notes.addEventListener("input", () => (b.notes = notes.value.trim()));
+
+    function drawResults(patients) {
+      if (patients.length === 0) {
+        fill(results, h("p", { class: "picker__empty" }, "Nenhum paciente encontrado. Cadastre um novo abaixo."));
+        return;
+      }
+      fill(results, ...patients.map((p) => h("button", {
+        class: "picker__option", type: "button", "aria-pressed": String(b.patient?.id === p.id),
+        onclick: (event) => {
+          b.patient = p;
+          results.querySelectorAll(".picker__option").forEach((el) => el.setAttribute("aria-pressed", "false"));
+          event.currentTarget.setAttribute("aria-pressed", "true");
+          drawSummary();
+        },
+      },
+        h("span", { class: "picker__name" }, p.name),
+        h("span", { class: "picker__meta" }, `CPF ${p.cpf}, ${ageFrom(p.birth_date)} anos`))));
+    }
+
+    async function loadPatients(q = "") {
+      try {
+        const page = await api.get("/patients", { q, limit: 8 });
+        if (isCurrent()) drawResults(page.items);
+      } catch (err) {
+        handleError(err);
+      }
+    }
+    search.addEventListener("input", debounce(() => loadPatients(search.value.trim())));
+    loadPatients();
+
+    fill(patientStep, 
+      stepHead(3, "step-patient", "Escolha o paciente"),
+      h("div", { class: "field" },
+        h("label", { class: "field__label", for: "booking-search" }, "Paciente"),
+        search, results,
+        h("button", {
+          class: "link-btn", type: "button", style: "justify-self:start",
+          onclick: () => openPatientDialog((p) => {
+            b.patient = p;
+            search.value = p.name;
+            drawResults([p]);
+            drawSummary();
+          }),
+        }, "Cadastrar novo paciente")),
+      h("div", { class: "field" },
+        h("label", { class: "field__label", for: "booking-notes" }, "Observações (opcional)"),
+        notes));
+  }
+
+  /* Resumo e confirmação */
+  function summaryRow(label, value) {
+    return h("div", null,
+      h("dt", null, label),
+      h("dd", { class: value ? null : "is-empty" }, value || "Ainda não escolhido"));
+  }
+
+  function drawSummary() {
+    const start = b.slot ? parseLocal(b.slot) : null;
+    const end = start ? new Date(start.getTime() + b.doctor.slot_minutes * 60000) : null;
+    const ready = Boolean(b.doctor && b.slot && b.patient);
+    let next = "Comece escolhendo o médico.";
+    if (b.doctor && !b.slot) next = "Agora escolha o dia e o horário.";
+    else if (b.slot && !b.patient) next = "Falta escolher o paciente.";
+
+    const error = h("p", { class: "form__error", role: "alert" });
+    const confirm = h("button", { class: "btn btn--primary btn--block btn--large", type: "button", disabled: !ready },
+      "Confirmar agendamento");
+    confirm.addEventListener("click", async () => {
+      confirm.disabled = true;
+      confirm.textContent = "Agendando…";
+      try {
+        const appointment = await api.post("/appointments", {
+          doctor_id: b.doctor.id, patient_id: b.patient.id, start_at: b.slot, notes: b.notes || null,
+        });
+        drawSuccess(appointment);
+      } catch (err) {
+        if (err.status === 401) return;
+        error.textContent = err.errors?.length ? err.errors.map((e) => e.message).join(" ") : err.message;
+        confirm.textContent = "Confirmar agendamento";
+        if (err.status === 409 || err.status === 422) {
+          // O horário foi ocupado ou passou enquanto a pessoa escolhia: atualiza a grade.
+          const patient = b.patient;
+          await chooseDoctor(b.doctor);
+          b.patient = patient;
+          drawSummary();
+          summary.querySelector(".form__error").textContent = error.textContent;
+        } else {
+          confirm.disabled = false;
+        }
+      }
+    });
+
+    fill(summary, 
+      h("h2", { class: "panel__title" }, "Resumo"),
+      h("dl", { class: "details" },
+        summaryRow("Médico", b.doctor && `${b.doctor.name}, ${b.doctor.specialty}`),
+        summaryRow("Dia", start && fmtLongDate(start)),
+        summaryRow("Horário", start && `${fmtTime(start)} às ${fmtTime(end)}`),
+        summaryRow("Paciente", b.patient?.name)),
+      error,
+      confirm,
+      !ready && h("p", { class: "summary__hint" }, next));
+  }
+
+  function drawSuccess(ap) {
+    const start = parseLocal(ap.start_at);
+    const end = parseLocal(ap.end_at);
+    toast("Consulta agendada.");
+    fill(summary, 
+      h("div", { class: "success" },
+        h("span", { class: "success__icon" }, icon("check")),
+        h("h2", { class: "panel__title", tabindex: "-1" }, "Consulta agendada"),
+        h("p", null, `${ap.patient.name} com ${ap.doctor.name}`),
+        h("p", { class: "panel__when" }, `${fmtLongDate(start)}, das ${fmtTime(start)} às ${fmtTime(end)}`)),
+      h("div", { class: "success__actions" },
+        h("button", { class: "btn btn--primary btn--block", type: "button", onclick: () => navigate() }, "Agendar outra consulta"),
+        h("button", {
+          class: "btn btn--ghost btn--block", type: "button",
+          onclick: () => {
+            Object.assign(state.agenda, { doctorId: ap.doctor.id, date: ap.start_at.slice(0, 10), selectedKey: ap.start_at });
+            location.hash = "#/agenda";
+          },
+        }, "Ver na agenda do médico")));
+    summary.querySelector(".panel__title").focus();
+    if (window.matchMedia("(max-width: 1100px)").matches) {
+      summary.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }
+
+  drawDoctors();
+  fill(timeStep, stepHead(2, "step-time", "Escolha o dia e o horário", "Disponível depois de escolher o médico."));
+  fill(patientStep, stepHead(3, "step-patient", "Escolha o paciente", "Disponível depois de escolher o horário."));
+  drawSummary();
 }
 
 /* ---------- Agenda ---------- */
 
 async function renderAgenda(main, isCurrent) {
-  main.replaceChildren(loading());
+  fill(main, loading());
   let doctors;
   try {
     doctors = await getDoctors();
@@ -607,7 +937,7 @@ async function renderAgenda(main, isCurrent) {
   if (!isCurrent()) return;
 
   if (doctors.length === 0) {
-    main.replaceChildren(
+    fill(main, 
       pageHead("Agenda", "Os horários aparecem aqui depois que um médico é cadastrado."),
       h("div", { class: "ruler" }, h("div", { class: "agenda-empty" },
         h("strong", null, "Nenhum médico cadastrado"),
@@ -649,7 +979,7 @@ async function renderAgenda(main, isCurrent) {
   const ruler = h("div", { class: "ruler", role: "list", "aria-label": "Horários do dia" });
   const panel = h("aside", { class: "panel", "aria-label": "Detalhes do horário" });
 
-  main.replaceChildren(
+  fill(main, 
     pageHead("Agenda", "Veja o dia de cada médico e marque consultas nos horários livres.", doctorField),
     h("div", { class: "agenda" }, h("section", null, daybar, ruler), panel));
 
@@ -668,7 +998,7 @@ async function renderAgenda(main, isCurrent) {
     const current = doctor();
     dateLabel.textContent = fmtLongDate(parseISODate(a.date));
     summary.textContent = "";
-    ruler.replaceChildren(loading("Carregando horários…"));
+    fill(ruler, loading("Carregando horários…"));
     try {
       const [availability, list] = await Promise.all([
         api.get(`/doctors/${current.id}/availability`, { date: a.date }),
@@ -681,7 +1011,7 @@ async function renderAgenda(main, isCurrent) {
     } catch (err) {
       if (seq !== daySeq) return;
       handleError(err);
-      ruler.replaceChildren(h("div", { class: "agenda-empty" },
+      fill(ruler, h("div", { class: "agenda-empty" },
         h("strong", null, "Não foi possível carregar a agenda"), h("p", null, err.message)));
     }
   }
@@ -693,7 +1023,7 @@ async function renderAgenda(main, isCurrent) {
 
     if (isWeekend(dateObj) && booked === 0) {
       summary.textContent = "Sem atendimento";
-      ruler.replaceChildren(h("div", { class: "agenda-empty" },
+      fill(ruler, h("div", { class: "agenda-empty" },
         h("strong", null, "Os médicos não atendem aos fins de semana"),
         h("p", { style: "margin-top:12px" },
           h("button", { class: "btn btn--ghost", type: "button", onclick: () => goTo(toISODate(nextWorkingDay(dateObj, false))) },
@@ -703,7 +1033,7 @@ async function renderAgenda(main, isCurrent) {
     }
 
     summary.textContent = `${plural(booked, "consulta", "consultas")} e ${plural(free, "horário livre", "horários livres")}`;
-    ruler.replaceChildren(...day.slots.map(slotRow));
+    fill(ruler, ...day.slots.map(slotRow));
     drawNowLine(dateObj);
     drawPanel();
   }
@@ -765,15 +1095,15 @@ async function renderAgenda(main, isCurrent) {
     const slot = day?.slots.find((s) => s.key === a.selectedKey);
     if (!slot || slot.kind === "past") {
       const d = doctor();
-      panel.replaceChildren(
+      fill(panel, 
         h("h2", { class: "panel__title" }, "Selecione um horário"),
         h("div", { class: "panel__hint" },
           h("p", null, "Clique em um horário livre para marcar uma consulta, ou em uma consulta para ver os detalhes."),
           h("p", null, `${d.name} atende de ${d.work_start} às ${d.work_end}, com consultas de ${d.slot_minutes} minutos.`)));
     } else if (slot.kind === "free") {
-      panel.replaceChildren(...bookingPanel(slot));
+      fill(panel, ...bookingPanel(slot));
     } else {
-      panel.replaceChildren(...detailsPanel(slot.appointment));
+      fill(panel, ...detailsPanel(slot.appointment));
     }
   }
 
@@ -790,10 +1120,10 @@ async function renderAgenda(main, isCurrent) {
 
     function drawResults(patients) {
       if (patients.length === 0) {
-        results.replaceChildren(h("p", { class: "picker__empty" }, "Nenhum paciente encontrado."));
+        fill(results, h("p", { class: "picker__empty" }, "Nenhum paciente encontrado."));
         return;
       }
-      results.replaceChildren(...patients.map((p) => {
+      fill(results, ...patients.map((p) => {
         const option = h("button", {
           class: "picker__option", type: "button", "aria-pressed": String(chosen?.id === p.id),
           onclick: () => {
@@ -942,7 +1272,7 @@ function buildSlots(doctor, isoDate, freeKeys, appointments) {
 
 async function renderAppointments(main, isCurrent) {
   const f = state.appointments;
-  main.replaceChildren(loading());
+  fill(main, loading());
   let doctors;
   try {
     doctors = await getDoctors();
@@ -982,7 +1312,7 @@ async function renderAppointments(main, isCurrent) {
   });
   filters.addEventListener("submit", (e) => e.preventDefault());
 
-  main.replaceChildren(pageHead("Consultas", "Todas as consultas da clínica, com filtros por dia, médico e situação."), filters, h("div", { style: "height:20px" }), listArea);
+  fill(main, pageHead("Consultas", "Todas as consultas da clínica, com filtros por dia, médico e situação."), filters, h("div", { style: "height:20px" }), listArea);
 
   async function load() {
     try {
@@ -998,7 +1328,7 @@ async function renderAppointments(main, isCurrent) {
 
   function draw(page) {
     const now = new Date();
-    listArea.replaceChildren(
+    fill(listArea, 
       dataTable({
         caption: "Lista de consultas",
         empty: "Nenhuma consulta encontrada com esses filtros.",
@@ -1067,7 +1397,7 @@ async function renderDoctors(main, isCurrent) {
     load();
   }));
 
-  main.replaceChildren(
+  fill(main, 
     pageHead("Médicos", "Profissionais da clínica, seus horários de atendimento e a duração de cada consulta.",
       h("button", { class: "btn btn--primary", type: "button", onclick: () => openDoctorDialog(() => load()) }, icon("plus"), "Cadastrar médico")),
     h("div", { class: "toolbar", role: "search", style: "margin-bottom:20px" }, search),
@@ -1077,7 +1407,7 @@ async function renderDoctors(main, isCurrent) {
     try {
       const page = await api.get("/doctors", { specialty: f.specialty, limit: PAGE_SIZE, offset: f.offset });
       if (!isCurrent()) return;
-      listArea.replaceChildren(
+      fill(listArea, 
         dataTable({
           caption: "Lista de médicos",
           empty: f.specialty ? "Nenhum médico com essa especialidade." : "Nenhum médico cadastrado ainda.",
@@ -1126,7 +1456,7 @@ async function renderPatients(main, isCurrent) {
     load();
   }));
 
-  main.replaceChildren(
+  fill(main, 
     pageHead("Pacientes", "Cadastro de pacientes, com CPF validado e dados de contato.",
       h("button", { class: "btn btn--primary", type: "button", onclick: () => openPatientDialog(() => load()) }, icon("plus"), "Cadastrar paciente")),
     h("div", { class: "toolbar", role: "search", style: "margin-bottom:20px" }, search),
@@ -1136,7 +1466,7 @@ async function renderPatients(main, isCurrent) {
     try {
       const page = await api.get("/patients", { q: f.q, limit: PAGE_SIZE, offset: f.offset });
       if (!isCurrent()) return;
-      listArea.replaceChildren(
+      fill(listArea, 
         dataTable({
           caption: "Lista de pacientes",
           empty: f.q ? "Nenhum paciente encontrado com essa busca." : "Nenhum paciente cadastrado ainda.",
@@ -1167,6 +1497,7 @@ async function renderPatients(main, isCurrent) {
 /* ===================== 6. Rotas e inicialização ===================== */
 
 const ROUTES = [
+  { path: "agendar", label: "Agendar", icon: "book", render: renderBooking },
   { path: "agenda", label: "Agenda", icon: "calendar", render: renderAgenda },
   { path: "consultas", label: "Consultas", icon: "list", render: renderAppointments },
   { path: "medicos", label: "Médicos", icon: "doctor", render: renderDoctors },
@@ -1181,7 +1512,7 @@ function renderShell() {
     ROUTES.map((r) => h("a", { class: "nav__link", href: `#/${r.path}`, "data-path": r.path }, icon(r.icon), h("span", null, r.label))));
 
   const sidebar = h("header", { class: "sidebar" },
-    h("a", { class: "brand", href: "#/agenda" }, h("img", { src: "/static/icon.svg", alt: "" }), h("span", null, "AgendaMed")),
+    h("a", { class: "brand", href: "#/agendar" }, h("img", { src: "/static/icon.svg", alt: "" }), h("span", null, "AgendaMed")),
     nav,
     h("a", { class: "sidebar__docs", href: "/docs", target: "_blank", rel: "noopener" }, "Documentação da API"),
     h("div", { class: "sidebar__user" },
@@ -1191,13 +1522,13 @@ function renderShell() {
       h("button", { class: "btn btn--ghost btn--small", type: "button", onclick: () => session.logout() }, icon("logout"), "Sair")));
 
   mainEl = h("main", { class: "main", id: "main" });
-  root().replaceChildren(h("div", { class: "shell" }, sidebar, mainEl));
+  fill(root(), h("div", { class: "shell" }, sidebar, mainEl));
   navigate({ focus: false });
 }
 
 function navigate({ focus = true } = {}) {
   if (!state.user || !mainEl) return;
-  const path = location.hash.replace(/^#\/?/, "") || "agenda";
+  const path = location.hash.replace(/^#\/?/, "") || "agendar";
   const route = ROUTES.find((r) => r.path === path) || ROUTES[0];
   document.querySelectorAll(".nav__link").forEach((link) => {
     if (link.dataset.path === route.path) link.setAttribute("aria-current", "page");

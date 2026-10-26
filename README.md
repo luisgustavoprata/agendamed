@@ -14,7 +14,7 @@ integração contínua.
 > Projeto de portfólio criado para demonstrar boas práticas de engenharia de software em
 > Python: arquitetura em camadas, validação de dados, segurança, testes, DevOps e front-end.
 
-![Agenda do dia com consultas marcadas e horários livres](docs/agenda.png)
+![Tela de agendamento guiado: médico, dia e horário, paciente e resumo](docs/agendar.png)
 
 ---
 
@@ -24,6 +24,11 @@ A API vem com uma interface pronta, servida pelo próprio Flask em `http://local
 É escrita em **HTML, CSS e JavaScript puros**, sem frameworks e sem etapa de build, e consome
 os mesmos endpoints documentados abaixo.
 
+- **Entrar na demonstração**: no site publicado, um botão dá acesso imediato a uma clínica
+  de exemplo, sem cadastro.
+- **Agendar consulta** (tela inicial): passo a passo guiado. Escolha o médico, veja os
+  próximos dias úteis com a quantidade de horários livres, toque no horário, escolha ou
+  cadastre o paciente e confirme pelo resumo ao lado.
 - **Agenda do dia**: o dia de cada médico em forma de régua de horários. Consultas aparecem
   como blocos, horários livres ficam tracejados e os que já passaram ficam hachurados.
   Clique em um horário livre para agendar, ou em uma consulta para ver os detalhes,
@@ -37,9 +42,9 @@ os mesmos endpoints documentados abaixo.
 - **Segura**: todo texto vindo da API entra na página como texto, nunca como HTML, o que
   evita ataques de XSS.
 
-| Consultas | Celular |
+| Agenda do dia | Celular |
 |---|---|
-| ![Lista de consultas com filtros](docs/consultas.png) | ![Agenda no celular](docs/celular.png) |
+| ![Agenda do dia com consultas marcadas e horários livres](docs/agenda.png) | ![Agenda no celular](docs/celular.png) |
 
 ---
 
@@ -233,7 +238,7 @@ pytest --cov                       # testes + relatório de cobertura
 ruff check .                       # lint
 ```
 
-São **53 testes** entre unitários (regras de agenda, validação de CPF) e de integração (API
+São **54 testes** entre unitários (regras de agenda, validação de CPF) e de integração (API
 completa, interface web, documentação e segurança, contra um banco SQLite temporário e
 isolado por teste). O GitHub Actions roda lint, testes em Python 3.12 e 3.13 e o build da
 imagem Docker a cada push.
