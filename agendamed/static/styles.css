@@ -118,23 +118,6 @@ select.input { padding-right: 32px; }
 .login__title { font-size: clamp(36px, 4.4vw, 56px); line-height: 1.05; font-weight: 700; max-width: 12ch; }
 .login__lede { margin-top: 16px; font-size: 18px; color: #cfe3dc; max-width: 36ch; }
 
-/* Amostra da régua da agenda, como na tela principal. */
-.ruler-sample { display: grid; gap: 0; max-width: 420px; }
-.ruler-sample__row {
-  display: grid; grid-template-columns: 64px 1fr; align-items: center;
-  min-height: 52px; border-top: 1px solid rgba(255, 255, 255, 0.14);
-}
-.ruler-sample__row--hour { border-top-color: rgba(255, 255, 255, 0.4); }
-.ruler-sample__time { font-size: 15px; color: #a9cbbf; font-variant-numeric: tabular-nums; }
-.ruler-sample__block {
-  margin: 6px 0; padding: 8px 12px; border-radius: var(--radius-s);
-  background: #fff; color: var(--pine-deep); font-weight: 700; font-size: 15px;
-}
-.ruler-sample__free {
-  margin: 6px 0; padding: 7px 12px; border-radius: var(--radius-s);
-  border: 1px dashed rgba(255, 255, 255, 0.45); color: #cfe3dc; font-size: 15px;
-}
-
 .login__panel { display: grid; place-items: center; padding: 48px 24px; }
 .login__card { width: 100%; max-width: 400px; display: grid; gap: 24px; }
 .login__heading { font-size: 28px; line-height: 1.2; }
@@ -441,7 +424,6 @@ select.input { padding-right: 32px; }
 @media (max-width: 860px) {
   .login { grid-template-columns: minmax(0, 1fr); }
   .login__brand { padding: 32px 24px; gap: 28px; }
-  .ruler-sample { display: none; }
 
   .shell { grid-template-columns: minmax(0, 1fr); }
   /* Barra superior em duas linhas: marca e "Sair" em cima, abas embaixo. */

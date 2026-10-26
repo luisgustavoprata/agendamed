@@ -522,23 +522,12 @@ function renderLogin() {
   document.title = "Entrar | AgendaMed";
   let mode = "login";
 
-  const sample = h("div", { class: "ruler-sample", "aria-hidden": "true" },
-    [
-      ["08:00", "block", "Ana Souza"],
-      ["08:30", "free", "Livre"],
-      ["09:00", "block", "Bruno Lima"],
-      ["09:30", "free", "Livre"],
-    ].map(([time, kind, text]) =>
-      h("div", { class: `ruler-sample__row${time.endsWith(":00") ? " ruler-sample__row--hour" : ""}` },
-        h("span", { class: "ruler-sample__time" }, time),
-        h("span", { class: kind === "block" ? "ruler-sample__block" : "ruler-sample__free" }, text))));
 
   const brand = h("section", { class: "login__brand" },
     h("div", { class: "brand", style: "color:#fff" }, h("img", { src: "/static/icon.svg", alt: "" }), h("span", null, "AgendaMed")),
     h("div", null,
       h("p", { class: "login__title" }, "A agenda da clínica, em um só lugar."),
-      h("p", { class: "login__lede" }, "Marque e acompanhe as consultas de cada médico sem conflito de horários.")),
-    sample);
+      h("p", { class: "login__lede" }, "Marque e acompanhe as consultas de cada médico sem conflito de horários.")));
 
   const card = h("div", { class: "login__card" });
   const panel = h("main", { class: "login__panel" }, card);
