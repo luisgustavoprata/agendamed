@@ -116,7 +116,6 @@ select.input { padding-right: 32px; }
   display: flex; flex-direction: column; justify-content: space-between; gap: 48px;
 }
 .login__title { font-size: clamp(36px, 4.4vw, 56px); line-height: 1.05; font-weight: 700; max-width: 12ch; }
-.login__lede { margin-top: 16px; font-size: 18px; color: #cfe3dc; max-width: 36ch; }
 
 /* Marca Argentum Software (versão clara) no canto inferior direito da área verde */
 .login__brand { position: relative; padding-bottom: 136px; } /* espaço para a marca não encostar no texto */

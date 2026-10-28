@@ -551,8 +551,7 @@ function renderLogin() {
   const brand = h("section", { class: "login__brand" },
     h("div", { class: "brand", style: "color:#fff" }, h("img", { src: "/static/icon.svg", alt: "" }), h("span", null, "AgendaMed")),
     h("div", null,
-      h("p", { class: "login__title" }, "A agenda da clínica, em um só lugar."),
-      h("p", { class: "login__lede" }, "Marque e acompanhe as consultas de cada médico sem conflito de horários.")),
+      h("p", { class: "login__title" }, "A agenda da clínica, em um só lugar.")),
     argentumMark());
 
   const card = h("div", { class: "login__card" });
