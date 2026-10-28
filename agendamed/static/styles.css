@@ -118,7 +118,12 @@ select.input { padding-right: 32px; }
 .login__title { font-size: clamp(36px, 4.4vw, 56px); line-height: 1.05; font-weight: 700; max-width: 12ch; }
 
 /* Marca Argentum Software (versão clara) no canto inferior direito da área verde */
-.login__brand { position: relative; padding-bottom: 136px; } /* espaço para a marca não encostar no texto */
+.login__brand { position: relative; isolation: isolate; padding-bottom: 136px; } /* espaço para a marca não encostar no texto */
+/* Marca d'água suave: cruz, coração, cápsula, calendário e batimento repetidos */
+.login__brand::before {
+  content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none;
+  background: url("/static/marca-dagua.svg") 0 0 / 200px 200px repeat; opacity: 0.06;
+}
 .argentum {
   position: absolute; right: clamp(20px, 3vw, 40px); bottom: clamp(20px, 3vw, 36px);
   display: inline-flex; align-items: center; gap: 12px; padding: 12px 18px 12px 12px;
@@ -141,11 +146,6 @@ select.input { padding-right: 32px; }
 }
 .tabs__btn[aria-selected="true"] { background: var(--surface); color: var(--ink); box-shadow: 0 1px 2px rgba(20, 48, 42, 0.12); }
 
-.demo-note {
-  padding: 12px 14px; border-radius: var(--radius-m);
-  background: var(--amber-wash); font-size: 14px; color: var(--ink-soft);
-}
-.demo-note strong { color: var(--ink); }
 .link-btn {
   padding: 0; border: 0; background: none; color: var(--pine);
   font-weight: 700; text-decoration: underline; cursor: pointer;

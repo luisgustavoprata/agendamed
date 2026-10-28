@@ -140,8 +140,8 @@ flask --app agendamed run --debug  # http://127.0.0.1:5000
 
 Abra **http://127.0.0.1:5000** no navegador para usar a interface web. O comando `seed` cria
 o usuário **admin@agendamed.dev** com a senha **admin12345**, além de três médicos, seis
-pacientes e uma agenda de consultas para os próximos dias úteis. Na tela de login, o botão
-"Preencher dados de demonstração" já coloca esse usuário e senha.
+pacientes e uma agenda de consultas para os próximos dias úteis. Entre na tela de login com
+esse usuário e senha.
 
 ### Com Docker
 

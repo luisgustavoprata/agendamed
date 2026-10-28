@@ -612,17 +612,6 @@ function renderLogin() {
       }
     });
 
-    const demoNote = isLogin && !demoMode && h("div", { class: "demo-note" },
-      "Rodou o comando ", h("strong", null, "seed"), "? Entre com a conta de demonstração. ",
-      h("button", {
-        class: "link-btn", type: "button",
-        onclick: () => {
-          form.elements.email.value = DEMO_EMAIL;
-          form.elements.password.value = DEMO_PASSWORD;
-          form.querySelector('[type="submit"]').focus();
-        },
-      }, "Preencher dados de demonstração"));
-
     let demoBlock = null;
     if (isLogin && demoMode) {
       const demoButton = h("button", { class: "btn btn--primary btn--block btn--large", type: "button" },
@@ -637,7 +626,7 @@ function renderLogin() {
 
     fill(card, 
       h("h1", { class: "login__heading" }, isLogin ? "Entrar na sua conta" : "Criar uma conta"),
-      tabs, demoBlock, form, demoNote);
+      tabs, demoBlock, form);
   }
 
   function switchTo(next) {
