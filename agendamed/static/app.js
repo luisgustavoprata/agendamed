@@ -522,6 +522,27 @@ const root = () => document.getElementById("root");
 
 /* ---------- Login ---------- */
 
+/** Marca da Argentum Software (versão clara) no canto da área verde do login. */
+function argentumMark() {
+  const svg = (tag, attrs) => {
+    const node = document.createElementNS("http://www.w3.org/2000/svg", tag);
+    for (const [k, v] of Object.entries(attrs)) node.setAttribute(k, v);
+    return node;
+  };
+  const icon = svg("svg", { viewBox: "0 0 64 64", class: "argentum__icon", "aria-hidden": "true" });
+  icon.append(
+    svg("rect", { x: 0, y: 0, width: 64, height: 64, rx: 15, fill: "#0E1A24" }),
+    svg("polygon", { points: "10,54 25,12 33,12 19,54", fill: "#FFFFFF" }),
+    svg("polygon", { points: "36,24 44,24 54,54 46,54", fill: "#FFFFFF" }),
+    svg("rect", { x: 37, y: 10, width: 9, height: 9, rx: 1.5, fill: "#3FD8C2" }),
+  );
+  return h("div", { class: "argentum", role: "img", "aria-label": "Argentum Software" },
+    icon,
+    h("span", { class: "argentum__words", "aria-hidden": "true" },
+      h("span", { class: "argentum__name" }, "Argentum"),
+      h("span", { class: "argentum__sub" }, "SOFTWARE")));
+}
+
 function renderLogin() {
   document.title = "Entrar | AgendaMed";
   let mode = "login";
@@ -531,7 +552,8 @@ function renderLogin() {
     h("div", { class: "brand", style: "color:#fff" }, h("img", { src: "/static/icon.svg", alt: "" }), h("span", null, "AgendaMed")),
     h("div", null,
       h("p", { class: "login__title" }, "A agenda da clínica, em um só lugar."),
-      h("p", { class: "login__lede" }, "Marque e acompanhe as consultas de cada médico sem conflito de horários.")));
+      h("p", { class: "login__lede" }, "Marque e acompanhe as consultas de cada médico sem conflito de horários.")),
+    argentumMark());
 
   const card = h("div", { class: "login__card" });
   const panel = h("main", { class: "login__panel" }, card);

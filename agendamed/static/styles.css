@@ -118,6 +118,19 @@ select.input { padding-right: 32px; }
 .login__title { font-size: clamp(36px, 4.4vw, 56px); line-height: 1.05; font-weight: 700; max-width: 12ch; }
 .login__lede { margin-top: 16px; font-size: 18px; color: #cfe3dc; max-width: 36ch; }
 
+/* Marca Argentum Software (versão clara) no canto inferior direito da área verde */
+.login__brand { position: relative; padding-bottom: 136px; } /* espaço para a marca não encostar no texto */
+.argentum {
+  position: absolute; right: clamp(20px, 3vw, 40px); bottom: clamp(20px, 3vw, 36px);
+  display: inline-flex; align-items: center; gap: 12px; padding: 12px 18px 12px 12px;
+  border-radius: 12px; background: #ffffff; border: 1px solid #dce2e7; color: #0e1a24;
+  font-family: "Space Grotesk", sans-serif; box-shadow: 0 6px 20px rgba(0, 0, 0, 0.22);
+}
+.argentum__icon { width: 40px; height: 40px; flex: none; }
+.argentum__words { display: grid; gap: 3px; }
+.argentum__name { font-size: 25px; font-weight: 700; letter-spacing: -0.05em; line-height: 0.9; }
+.argentum__sub { font-size: 8.5px; font-weight: 500; letter-spacing: 0.42em; line-height: 1; color: #0e7c6e; padding-left: 1px; }
+
 .login__panel { display: grid; place-items: center; padding: 48px 24px; }
 .login__card { width: 100%; max-width: 400px; display: grid; gap: 24px; }
 .login__heading { font-size: 28px; line-height: 1.2; }
@@ -424,6 +437,8 @@ select.input { padding-right: 32px; }
 @media (max-width: 860px) {
   .login { grid-template-columns: minmax(0, 1fr); }
   .login__brand { padding: 32px 24px; gap: 28px; }
+  .login__brand { padding-bottom: 24px; }
+  .argentum { position: static; align-self: flex-end; order: 99; transform: scale(0.85); transform-origin: right bottom; }
 
   .shell { grid-template-columns: minmax(0, 1fr); }
   /* Barra superior em duas linhas: marca e "Sair" em cima, abas embaixo. */
