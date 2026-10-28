@@ -88,6 +88,53 @@ class PatientCreate(EmailMixin):
         return value
 
 
+class PatientUpdate(InputSchema):
+    """Edição parcial: só os campos enviados mudam. O telefone aceita null para ser apagado."""
+
+    name: Name | None = None
+    cpf: str | None = None
+    email: str | None = Field(default=None, max_length=255)
+    phone: str | None = Field(default=None, pattern=r"^\+?[\d\s()-]{10,20}$")
+    birth_date: date | None = None
+
+    @field_validator("name", "cpf", "email", "birth_date", mode="before")
+    @classmethod
+    def required_if_sent(cls, value):
+        if value is None:
+            raise ValueError("Este campo não pode ficar vazio.")
+        return value
+
+    @field_validator("cpf")
+    @classmethod
+    def validate_cpf(cls, value: str) -> str:
+        if not is_valid_cpf(value):
+            raise ValueError("CPF inválido.")
+        return only_digits(value)
+
+    @field_validator("email")
+    @classmethod
+    def validate_email(cls, value: str) -> str:
+        if not EMAIL_PATTERN.match(value):
+            raise ValueError("E-mail inválido.")
+        return value.lower()
+
+    @field_validator("birth_date")
+    @classmethod
+    def validate_birth_date(cls, value: date) -> date:
+        if value > date.today():
+            raise ValueError("A data de nascimento não pode estar no futuro.")
+        return value
+
+    @model_validator(mode="after")
+    def require_some_change(self) -> "PatientUpdate":
+        if not self.model_fields_set:
+            raise ValueError("Envie ao menos um campo para alterar.")
+        return self
+
+    def changes(self) -> dict:
+        return {name: getattr(self, name) for name in self.model_fields_set}
+
+
 class AppointmentCreate(InputSchema):
     doctor_id: PositiveInt
     patient_id: PositiveInt

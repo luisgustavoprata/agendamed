@@ -145,6 +145,23 @@ class PatientRepository(Repository):
         row = self.conn.execute("SELECT * FROM patients WHERE id = ?", (patient_id,)).fetchone()
         return Patient.from_row(row) if row else None
 
+    _EDITABLE = ("name", "cpf", "email", "phone", "birth_date")
+
+    def update(self, patient_id: int, changes: dict) -> Patient:
+        columns = [name for name in self._EDITABLE if name in changes]
+        values = [
+            changes[name].isoformat() if name == "birth_date" else changes[name]
+            for name in columns
+        ]
+        assignments = ", ".join(f"{name} = ?" for name in columns)
+        try:
+            self.conn.execute(
+                f"UPDATE patients SET {assignments} WHERE id = ?", (*values, patient_id)
+            )
+        except sqlite3.IntegrityError as exc:
+            raise ConflictError("Já existe um paciente com este CPF.") from exc
+        return self.get(patient_id)
+
     def list(self, *, search: str | None, limit: int, offset: int) -> Page:
         where, params = [], []
         if search:

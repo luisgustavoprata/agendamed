@@ -104,3 +104,71 @@ class PatientsTest(APITestCase):
             "/patients", data="não é json", headers=self.headers, content_type="text/plain"
         )
         self.assertEqual(response.status_code, 400)
+
+
+class PatientUpdateTests(APITestCase):
+    def setUp(self) -> None:
+        super().setUp()
+        self.headers = self.auth_headers()
+        self.patient = self.create_patient(self.headers, phone="(11) 98888-7777")
+
+    def patch(self, patient_id, payload):
+        return self.client.patch(f"/patients/{patient_id}", json=payload, headers=self.headers)
+
+    def test_updates_only_the_fields_sent(self):
+        response = self.patch(
+            self.patient["id"], {"name": "Ana Souza Lima", "email": "ANA@novo.com"}
+        )
+        self.assertEqual(response.status_code, 200, response.json)
+        self.assertEqual(response.json["name"], "Ana Souza Lima")
+        self.assertEqual(response.json["email"], "ana@novo.com")
+        self.assertEqual(response.json["cpf"], "529.982.247-25")
+        self.assertEqual(response.json["phone"], "(11) 98888-7777")
+        again = self.client.get(f"/patients/{self.patient['id']}", headers=self.headers).json
+        self.assertEqual(again["name"], "Ana Souza Lima")
+
+    def test_phone_can_be_cleared(self):
+        response = self.patch(self.patient["id"], {"phone": None})
+        self.assertEqual(response.status_code, 200, response.json)
+        self.assertIsNone(response.json["phone"])
+
+    def test_required_field_cannot_be_emptied(self):
+        response = self.patch(self.patient["id"], {"name": None})
+        self.assertEqual(response.status_code, 422)
+        self.assertEqual(response.json["errors"][0]["field"], "name")
+
+    def test_invalid_cpf_returns_422(self):
+        response = self.patch(self.patient["id"], {"cpf": "111.111.111-11"})
+        self.assertEqual(response.status_code, 422)
+        self.assertEqual(response.json["errors"][0]["message"], "CPF inválido.")
+
+    def test_cpf_of_another_patient_returns_409(self):
+        other = self.create_patient(
+            self.headers, name="Bruno Lima", cpf="526.018.159-06", email="b@exemplo.com"
+        )
+        response = self.patch(other["id"], {"cpf": "52998224725"})
+        self.assertEqual(response.status_code, 409)
+
+    def test_keeping_the_same_cpf_is_allowed(self):
+        response = self.patch(self.patient["id"], {"cpf": "52998224725", "name": "Ana Souza"})
+        self.assertEqual(response.status_code, 200, response.json)
+
+    def test_empty_body_returns_422(self):
+        self.assertEqual(self.patch(self.patient["id"], {}).status_code, 422)
+
+    def test_unknown_patient_returns_404(self):
+        self.assertEqual(self.patch(9999, {"name": "Fulano de Tal"}).status_code, 404)
+
+    def test_appointments_show_the_new_name(self):
+        doctor = self.create_doctor(self.headers)
+        booked = self.book(self.headers, doctor["id"], self.patient["id"], "2030-01-08T10:00:00")
+        self.assertEqual(booked.status_code, 201, booked.json)
+        self.patch(self.patient["id"], {"name": "Ana Souza Lima"})
+        appointment = self.client.get(
+            f"/appointments/{booked.json['id']}", headers=self.headers
+        ).json
+        self.assertEqual(appointment["patient"]["name"], "Ana Souza Lima")
+
+    def test_requires_login(self):
+        response = self.client.patch(f"/patients/{self.patient['id']}", json={"name": "Fulano"})
+        self.assertEqual(response.status_code, 401)

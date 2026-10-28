@@ -212,6 +212,10 @@ const api = {
     return this.request("POST", path, body);
   },
 
+  patch(path, body = {}) {
+    return this.request("PATCH", path, body);
+  },
+
   del(path) {
     return this.request("DELETE", path);
   },
@@ -478,33 +482,39 @@ function openDoctorDialog(onCreated) {
   });
 }
 
-function openPatientDialog(onCreated) {
-  openDialog("Cadastrar paciente", (close) => {
+/** Cadastra um paciente novo ou, recebendo `patient`, edita o cadastro existente. */
+function openPatientDialog(onSaved, patient = null) {
+  const editing = Boolean(patient);
+  openDialog(editing ? "Editar paciente" : "Cadastrar paciente", (close) => {
+    const v = patient || {};
     const form = h("form", { class: "form", novalidate: true },
       h("p", { class: "form__error", role: "alert", tabindex: "-1" }),
-      field({ label: "Nome completo", name: "name", required: true, autocomplete: "off" }),
+      field({ label: "Nome completo", name: "name", required: true, autocomplete: "off", value: v.name ?? "" }),
       h("div", { class: "form__row" },
-        field({ label: "CPF", name: "cpf", required: true, inputmode: "numeric", placeholder: "000.000.000-00" }),
-        field({ label: "Data de nascimento", name: "birth_date", type: "date", required: true, max: toISODate(new Date()) })),
+        field({ label: "CPF", name: "cpf", required: true, inputmode: "numeric", placeholder: "000.000.000-00", value: v.cpf ?? "" }),
+        field({ label: "Data de nascimento", name: "birth_date", type: "date", required: true, max: toISODate(new Date()), value: v.birth_date ?? "" })),
       h("div", { class: "form__row" },
-        field({ label: "E-mail", name: "email", type: "email", required: true }),
-        field({ label: "Telefone", name: "phone", type: "tel", inputmode: "tel", placeholder: "(00) 00000-0000", hint: "Opcional" })),
+        field({ label: "E-mail", name: "email", type: "email", required: true, value: v.email ?? "" }),
+        field({ label: "Telefone", name: "phone", type: "tel", inputmode: "tel", placeholder: "(00) 00000-0000", hint: "Opcional", value: v.phone ?? "" })),
       h("div", { class: "form__actions" },
         h("button", { class: "btn btn--ghost", type: "button", onclick: close }, "Cancelar"),
-        h("button", { class: "btn btn--primary", type: "submit" }, "Cadastrar paciente")));
+        h("button", { class: "btn btn--primary", type: "submit" }, editing ? "Salvar alterações" : "Cadastrar paciente")));
 
     form.elements.cpf.addEventListener("input", (e) => (e.target.value = maskCpf(e.target.value)));
     form.elements.phone.addEventListener("input", (e) => (e.target.value = maskPhone(e.target.value)));
     form.addEventListener("submit", async (event) => {
       event.preventDefault();
       const values = formValues(form);
+      const body = { ...values, phone: values.phone || null };
       const submit = form.querySelector('[type="submit"]');
       submit.disabled = true;
       try {
-        const patient = await api.post("/patients", { ...values, phone: values.phone || null });
+        const saved = editing
+          ? await api.patch(`/patients/${patient.id}`, body)
+          : await api.post("/patients", body);
         close();
-        toast(`${patient.name} foi cadastrado(a).`);
-        onCreated?.(patient);
+        toast(editing ? `Os dados de ${saved.name} foram atualizados.` : `${saved.name} foi cadastrado(a).`);
+        onSaved?.(saved);
       } catch (err) {
         if (err.status === 401) return;
         showFormErrors(form, err);
@@ -1499,6 +1509,14 @@ async function renderPatients(main, isCurrent) {
             },
             { label: "E-mail", render: (p) => p.email },
             { label: "Telefone", class: "num", render: (p) => p.phone || h("span", { class: "muted" }, "Não informado") },
+            {
+              label: "Ações", class: "actions",
+              render: (p) => h("button", {
+                class: "btn btn--ghost btn--small", type: "button",
+                "aria-label": `Editar ${p.name}`,
+                onclick: () => openPatientDialog(() => load(), p),
+              }, "Editar"),
+            },
           ],
         }),
         pager(page, (offset) => {

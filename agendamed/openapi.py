@@ -12,6 +12,7 @@ from agendamed.schemas import (
     DoctorCreate,
     LoginRequest,
     PatientCreate,
+    PatientUpdate,
     UserCreate,
 )
 
@@ -88,6 +89,7 @@ REQUEST_MODELS = {
     "LoginRequest": LoginRequest,
     "DoctorCreate": DoctorCreate,
     "PatientCreate": PatientCreate,
+    "PatientUpdate": PatientUpdate,
     "AppointmentCreate": AppointmentCreate,
 }
 
@@ -192,9 +194,15 @@ def _paths() -> dict:
             "post": _op("Cadastra um paciente", "Pacientes", ok=201, ok_schema="Patient",
                         body="PatientCreate", errors=(400, 409, 422)),
         },
-        "/patients/{patient_id}": {"get": _op(
-            "Detalhes de um paciente", "Pacientes", ok=200, ok_schema="Patient",
-            params=[patient_id], errors=(404,))},
+        "/patients/{patient_id}": {
+            "get": _op("Detalhes de um paciente", "Pacientes", ok=200, ok_schema="Patient",
+                       params=[patient_id], errors=(404,)),
+            "patch": _op(
+                "Altera os dados de um paciente", "Pacientes", ok=200, ok_schema="Patient",
+                body="PatientUpdate", params=[patient_id], errors=(400, 404, 409, 422),
+                description="Envie só os campos que mudam. O CPF continua validado e não pode "
+                            "repetir o de outro paciente; `phone: null` apaga o telefone."),
+        },
         "/appointments": {
             "get": _op("Lista consultas", "Consultas", ok=200, ok_schema="AppointmentPage",
                        errors=(400,), params=[

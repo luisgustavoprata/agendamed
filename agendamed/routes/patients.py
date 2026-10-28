@@ -4,7 +4,7 @@ from agendamed.db import get_db
 from agendamed.errors import NotFoundError
 from agendamed.repositories import PatientRepository
 from agendamed.routes._helpers import pagination, parse_body, require_auth
-from agendamed.schemas import PatientCreate
+from agendamed.schemas import PatientCreate, PatientUpdate
 from agendamed.validators import only_digits
 
 bp = Blueprint("patients", __name__, url_prefix="/patients")
@@ -35,3 +35,12 @@ def get_patient(patient_id: int):
     if patient is None:
         raise NotFoundError("Paciente não encontrado.")
     return patient.to_dict()
+
+
+@bp.patch("/<int:patient_id>")
+def update_patient(patient_id: int):
+    """Altera os dados de um paciente. As consultas dele continuam ligadas ao mesmo cadastro."""
+    patients = PatientRepository(get_db())
+    if patients.get(patient_id) is None:
+        raise NotFoundError("Paciente não encontrado.")
+    return patients.update(patient_id, parse_body(PatientUpdate).changes()).to_dict()

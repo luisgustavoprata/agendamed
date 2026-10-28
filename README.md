@@ -34,7 +34,7 @@ os mesmos endpoints documentados abaixo.
   Clique em um horário livre para agendar, ou em uma consulta para ver os detalhes,
   concluir ou cancelar.
 - **Consultas**: lista com filtros por dia, médico e situação, além de paginação.
-- **Médicos** e **Pacientes**: busca e cadastro, com máscara de CPF e telefone e os erros de
+- **Médicos** e **Pacientes**: busca e cadastro (e edição do cadastro do paciente), com máscara de CPF e telefone e os erros de
   validação da API exibidos ao lado de cada campo.
 - **Responsiva**: funciona no celular, com navegação por abas no topo.
 - **Acessível**: navegação por teclado, foco visível, rótulos em todos os campos e
@@ -52,7 +52,8 @@ os mesmos endpoints documentados abaixo.
 
 - **Autenticação** com cadastro, login e token **JWT** (expiração configurável).
 - **Médicos** com especialidade, CRM, expediente e duração de consulta próprios.
-- **Pacientes** com **validação de CPF** pelos dígitos verificadores e busca por nome ou CPF.
+- **Pacientes** com **validação de CPF** pelos dígitos verificadores, busca por nome ou CPF e
+  edição dos dados (sem duplicar o CPF de outro paciente).
 - **Consultas**: agendar, listar com filtros, cancelar e concluir.
 - **Agenda disponível**: lista os horários livres de um médico em um dia.
 - **Documentação interativa** OpenAPI 3.1 com Swagger UI em `/docs`.
@@ -176,6 +177,7 @@ demonstração, com datas sempre relativas ao dia atual.
 | `GET` | `/doctors/{id}/availability?date=AAAA-MM-DD` | Horários livres no dia |
 | `POST` / `GET` | `/patients` | Cadastra / lista pacientes (`?q=` nome ou CPF) |
 | `GET` | `/patients/{id}` | Detalhes de um paciente |
+| `PATCH` | `/patients/{id}` | Altera os dados de um paciente (só os campos enviados) |
 | `POST` / `GET` | `/appointments` | Agenda / lista consultas (`?doctor_id= &patient_id= &date= &status=`) |
 | `GET` | `/appointments/{id}` | Detalhes de uma consulta |
 | `POST` | `/appointments/{id}/cancel` | Cancela uma consulta |
