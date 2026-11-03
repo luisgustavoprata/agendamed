@@ -23,6 +23,8 @@ class Config:
 
     LOGIN_MAX_ATTEMPTS = int(os.environ.get("LOGIN_MAX_ATTEMPTS", "5"))
     LOGIN_WINDOW_SECONDS = int(os.environ.get("LOGIN_WINDOW_SECONDS", "300"))
+    # Falhas de login aceitas por IP na mesma janela, somando todos os e-mails.
+    LOGIN_IP_MAX_ATTEMPTS = int(os.environ.get("LOGIN_IP_MAX_ATTEMPTS", "30"))
 
     # Atrás de um proxy reverso (Render, Heroku, Nginx), o IP real do cliente vem no
     # cabeçalho X-Forwarded-For. Só ative quando houver um proxy confiável na frente.
@@ -30,3 +32,7 @@ class Config:
 
     # Popula o banco com dados de demonstração na inicialização, se ele estiver vazio.
     SEED_DEMO_DATA = env_bool("SEED_DEMO_DATA")
+
+    # Permite que qualquer pessoa crie uma conta pelo site. Nesta versão todos os usuários
+    # enxergam os mesmos dados, então em um site público deixe desligado.
+    ALLOW_SIGNUP = env_bool("ALLOW_SIGNUP", default=True)

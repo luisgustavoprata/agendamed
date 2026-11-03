@@ -22,6 +22,10 @@ class UnauthorizedError(DomainError):
     status_code = 401
 
 
+class ForbiddenError(DomainError):
+    status_code = 403
+
+
 class NotFoundError(DomainError):
     status_code = 404
 
@@ -41,6 +45,7 @@ class TooManyRequestsError(DomainError):
 HTTP_MESSAGES = {
     404: "Rota não encontrada.",
     405: "Método HTTP não permitido nesta rota.",
+    413: "O corpo da requisição é grande demais.",
     415: "Envie o corpo da requisição como JSON.",
 }
 

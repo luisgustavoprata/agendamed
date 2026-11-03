@@ -3,7 +3,7 @@
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
-from flask import Flask
+from flask import Flask, request
 from werkzeug.middleware.proxy_fix import ProxyFix
 
 from agendamed import db, errors
@@ -13,17 +13,24 @@ from agendamed.routes import appointments, auth, docs, doctors, patients
 
 __version__ = "1.2.0"
 
-# Política de segurança de conteúdo: só carrega scripts do próprio site e do CDN do
-# Swagger UI, e impede que a página seja exibida dentro de iframes de outros sites.
+# Política de segurança de conteúdo: scripts, estilos e fontes só do próprio site, e a
+# página não pode ser exibida dentro de iframes de outros sites. A página /docs define a
+# sua própria política, que libera o CDN do Swagger UI.
 CONTENT_SECURITY_POLICY = "; ".join([
     "default-src 'self'",
-    "script-src 'self' https://cdn.jsdelivr.net",
-    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net",
-    "font-src 'self' https://fonts.gstatic.com",
-    "img-src 'self' data: https://cdn.jsdelivr.net",
+    "script-src 'self'",
+    "style-src 'self' 'unsafe-inline'",
+    "font-src 'self'",
+    "img-src 'self' data:",
     "connect-src 'self'",
+    "base-uri 'none'",
+    "form-action 'self'",
+    "object-src 'none'",
     "frame-ancestors 'none'",
 ])
+
+# Limite do corpo das requisições: a API só recebe JSON pequeno.
+MAX_CONTENT_LENGTH = 64 * 1024
 
 
 def clinic_clock(timezone: str):
@@ -37,6 +44,7 @@ def create_app(config: dict | None = None) -> Flask:
     app = Flask(__name__)
     app.config.from_object(Config)
     app.config["CLOCK"] = clinic_clock(app.config["CLINIC_TIMEZONE"])
+    app.config["MAX_CONTENT_LENGTH"] = MAX_CONTENT_LENGTH
     if config:
         app.config.update(config)
 
@@ -48,6 +56,11 @@ def create_app(config: dict | None = None) -> Flask:
 
     app.extensions["login_limiter"] = LoginRateLimiter(
         app.config["LOGIN_MAX_ATTEMPTS"], app.config["LOGIN_WINDOW_SECONDS"]
+    )
+    # Segundo limite, só por IP: impede que um único endereço teste muitos e-mails
+    # diferentes (cada tentativa custa um cálculo de PBKDF2 caro para o servidor).
+    app.extensions["login_ip_limiter"] = LoginRateLimiter(
+        app.config["LOGIN_IP_MAX_ATTEMPTS"], app.config["LOGIN_WINDOW_SECONDS"]
     )
 
     db.init_app(app)
@@ -63,8 +76,14 @@ def create_app(config: dict | None = None) -> Flask:
 
     @app.get("/health")
     def health():
-        # "demo" avisa a interface que existe uma conta de demonstração pronta.
-        return {"status": "ok", "version": __version__, "demo": app.config["SEED_DEMO_DATA"]}
+        # "demo" avisa a interface que existe uma conta de demonstração pronta, e
+        # "signup" se a aba de criar conta deve aparecer.
+        return {
+            "status": "ok",
+            "version": __version__,
+            "demo": app.config["SEED_DEMO_DATA"],
+            "signup": app.config["ALLOW_SIGNUP"],
+        }
 
     @app.after_request
     def security_headers(response):
@@ -72,6 +91,14 @@ def create_app(config: dict | None = None) -> Flask:
         response.headers.setdefault("X-Content-Type-Options", "nosniff")
         response.headers.setdefault("X-Frame-Options", "DENY")
         response.headers.setdefault("Referrer-Policy", "same-origin")
+        response.headers.setdefault("Permissions-Policy", "camera=(), microphone=(), geolocation=()")
+        response.headers.setdefault("Cross-Origin-Opener-Policy", "same-origin")
+        if request.is_secure:
+            # Navegador passa a usar só HTTPS neste domínio por um ano.
+            response.headers.setdefault("Strict-Transport-Security", "max-age=31536000")
+        if request.path.startswith(("/auth", "/doctors", "/patients", "/appointments")):
+            # Dados de pacientes não devem ficar guardados em cache de navegador ou proxy.
+            response.headers.setdefault("Cache-Control", "no-store")
         return response
 
     with app.app_context():

@@ -13,6 +13,8 @@ services:
         generateValue: true          # o Render gera uma chave aleatória e segura
       - key: SEED_DEMO_DATA
         value: "true"                # demonstração pública já com médicos e consultas
+      - key: ALLOW_SIGNUP
+        value: "false"               # todos os usuários veem os mesmos dados: sem cadastro aberto
       - key: CLINIC_TIMEZONE
         value: America/Sao_Paulo
       - key: TRUST_PROXY

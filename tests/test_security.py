@@ -43,6 +43,41 @@ class LoginRateLimitTest(APITestCase):
         self.assertEqual(other.status_code, 401)
 
 
+    def test_limit_per_ip_across_many_emails(self):
+        self.app.extensions["login_ip_limiter"].max_attempts = 3
+        for i in range(3):
+            response = self.client.post(
+                "/auth/login", json={"email": f"teste{i}@clinica.com", "password": "qualquer-1"}
+            )
+            self.assertEqual(response.status_code, 401)
+        blocked = self.client.post(
+            "/auth/login", json={"email": "outra@clinica.com", "password": "qualquer-1"}
+        )
+        self.assertEqual(blocked.status_code, 429)
+
+
+class SignupTest(APITestCase):
+    def test_signup_can_be_closed(self):
+        self.app.config["ALLOW_SIGNUP"] = False
+        response = self.client.post("/auth/register", json={
+            "email": "nova@clinica.com", "full_name": "Pessoa Nova", "password": "senha-forte-123",
+        })
+        self.assertEqual(response.status_code, 403)
+        self.assertIs(self.client.get("/health").json["signup"], False)
+
+
+class RequestLimitsTest(APITestCase):
+    def test_rejects_oversized_body(self):
+        response = self.client.post(
+            "/auth/login", data="x" * (70 * 1024), content_type="application/json"
+        )
+        self.assertEqual(response.status_code, 413)
+
+    def test_api_responses_are_not_cached(self):
+        response = self.client.get("/doctors")
+        self.assertEqual(response.headers["Cache-Control"], "no-store")
+
+
 class SecurityHeadersTest(APITestCase):
     def test_security_headers_on_every_response(self):
         for path in ("/", "/health", "/doctors"):

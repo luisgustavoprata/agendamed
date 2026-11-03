@@ -44,6 +44,8 @@ const ICONS = {
   plus: '<path d="M12 5v14M5 12h14"/>',
   check: '<path d="M5 12.5l4.5 4.5L19 7.5"/>',
   book: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4M12 13v5M9.5 15.5h5"/>',
+  shield: '<path d="M12 3l7 3v5c0 4.5-3 8.5-7 10-4-1.5-7-5.5-7-10V6z"/><path d="M9 12l2 2 4-4"/>',
+  lock: '<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>',
 };
 
 function icon(name) {
@@ -66,6 +68,14 @@ function debounce(fn, wait = 250) {
     clearTimeout(timer);
     timer = setTimeout(() => fn(...args), wait);
   };
+}
+
+/** Iniciais do primeiro e do último nome, ignorando títulos como "Dra.". */
+function initials(name) {
+  const parts = name.split(/\s+/).filter((p) => p && !/^(dr|dra|sr|sra)\.?$/i.test(p));
+  if (parts.length === 0) return "";
+  const last = parts.length > 1 ? parts[parts.length - 1][0] : "";
+  return (parts[0][0] + last).toUpperCase();
 }
 
 function plural(n, one, many) {
@@ -559,20 +569,28 @@ function renderLogin() {
 
 
   const brand = h("section", { class: "login__brand" },
-    h("div", { class: "brand", style: "color:#fff" }, h("img", { src: "/static/icon.svg", alt: "" }), h("span", null, "AgendaMed")),
+    h("div", { class: "brand" }, h("img", { src: "/static/icon.svg", alt: "" }), h("span", null, "AgendaMed")),
     h("div", null,
+      h("p", { class: "login__eyebrow" }, "Gestão de agenda clínica"),
       h("p", { class: "login__title" }, "A agenda da clínica, em um só lugar.")),
-    argentumMark());
+    h("div", { class: "login__bottom" },
+      h("p", { class: "login__foot" },
+        h("span", null, icon("shield"), "Conexão protegida por HTTPS"),
+        h("span", null, icon("lock"), "Acesso restrito à equipe")),
+      argentumMark()));
 
   const card = h("div", { class: "login__card" });
   const panel = h("main", { class: "login__panel" }, card);
   let demoMode = false;
+  let signupOpen = true;
 
   // Em modo demonstração (SEED_DEMO_DATA), o servidor avisa pelo /health e a tela
-  // oferece entrada com um clique, sem precisar criar conta.
+  // oferece entrada com um clique, sem precisar criar conta. Com o cadastro fechado
+  // (ALLOW_SIGNUP=false), a aba "Criar conta" some.
   api.get("/health").then((info) => {
     demoMode = Boolean(info?.demo);
-    if (demoMode && mode === "login") draw();
+    signupOpen = info?.signup !== false;
+    if ((demoMode || !signupOpen) && mode === "login") draw();
   }).catch(() => {});
 
   async function enterDemo(button) {
@@ -589,7 +607,7 @@ function renderLogin() {
 
   function draw() {
     const isLogin = mode === "login";
-    const tabs = h("div", { class: "tabs", role: "tablist", "aria-label": "Acesso" },
+    const tabs = signupOpen && h("div", { class: "tabs", role: "tablist", "aria-label": "Acesso" },
       h("button", { class: "tabs__btn", type: "button", role: "tab", "aria-selected": String(isLogin), onclick: () => switchTo("login") }, "Entrar"),
       h("button", { class: "tabs__btn", type: "button", role: "tab", "aria-selected": String(!isLogin), onclick: () => switchTo("register") }, "Criar conta"));
 
@@ -630,12 +648,16 @@ function renderLogin() {
       demoBlock = h("div", { class: "demo-entry" },
         demoButton,
         h("p", { class: "demo-entry__hint" },
-          "Acesso imediato, sem cadastro, a uma clínica de exemplo com médicos, pacientes e consultas."),
+          "Clínica de exemplo com médicos, pacientes e consultas. Não precisa de cadastro."),
         h("p", { class: "login__divider" }, "ou entre com a sua conta"));
     }
 
-    fill(card, 
-      h("h1", { class: "login__heading" }, isLogin ? "Entrar na sua conta" : "Criar uma conta"),
+    fill(card,
+      h("div", null,
+        h("h1", { class: "login__heading" }, isLogin ? "Acesso da equipe" : "Criar uma conta"),
+        h("p", { class: "login__sub" }, isLogin
+          ? "Entre com o e-mail e a senha fornecidos pela sua clínica."
+          : "Use um e-mail que você acessa. A senha precisa ter ao menos 8 caracteres.")),
       tabs, demoBlock, form);
   }
 
@@ -1551,12 +1573,14 @@ function renderShell() {
   const sidebar = h("header", { class: "sidebar" },
     h("a", { class: "brand", href: "#/agendar" }, h("img", { src: "/static/icon.svg", alt: "" }), h("span", null, "AgendaMed")),
     nav,
-    h("a", { class: "sidebar__docs", href: "/docs", target: "_blank", rel: "noopener" }, "Documentação da API"),
-    h("div", { class: "sidebar__user" },
-      h("div", null,
-        h("p", { class: "sidebar__user-name" }, state.user.full_name),
-        h("p", { class: "sidebar__user-email" }, state.user.email)),
-      h("button", { class: "btn btn--ghost btn--small", type: "button", onclick: () => session.logout() }, icon("logout"), "Sair")));
+    h("div", { class: "sidebar__foot" },
+      h("a", { class: "sidebar__docs", href: "/docs", target: "_blank", rel: "noopener" }, "Documentação da API"),
+      h("div", { class: "sidebar__user" },
+        h("span", { class: "avatar", "aria-hidden": "true" }, initials(state.user.full_name)),
+        h("div", null,
+          h("p", { class: "sidebar__user-name", title: state.user.full_name }, state.user.full_name),
+          h("p", { class: "sidebar__user-email", title: state.user.email }, state.user.email)),
+        h("button", { class: "btn btn--ghost btn--small", type: "button", onclick: () => session.logout() }, icon("logout"), "Sair"))));
 
   mainEl = h("main", { class: "main", id: "main" });
   fill(root(), h("div", { class: "shell" }, sidebar, mainEl));
