@@ -204,6 +204,41 @@ select.input { padding-right: 32px; }
 }
 .link-btn:hover { color: var(--navy-deep); }
 
+/* Login com a marca da clínica (exemplo): cartão central, cor da clínica nos botões e o
+   AgendaMed como assinatura discreta. */
+.login--clinic {
+  --clinic: #3f6b57; --clinic-deep: #2f5343; --clinic-wash: #e8f0ea;
+  grid-template-columns: minmax(0, 1fr); grid-template-rows: 1fr auto;
+  background: var(--paper);
+}
+.login__center { display: grid; place-content: center; justify-items: center; gap: 14px; padding: 48px 20px 24px; }
+.login__card--boxed {
+  width: min(380px, 100%); max-width: none; gap: 20px; padding: 28px 28px 26px;
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-l);
+}
+.clinic-mark { display: flex; align-items: center; gap: 12px; padding-bottom: 18px; border-bottom: 1px solid var(--line); }
+.clinic-mark__logo {
+  width: 44px; height: 44px; flex: none; border-radius: var(--radius-l);
+  display: grid; place-items: center; background: var(--clinic-wash); color: var(--clinic);
+  font-family: var(--font-display); font-size: 17px; font-weight: 600; letter-spacing: 0.02em;
+}
+.clinic-mark__name { font-family: var(--font-display); font-size: 21px; font-weight: 600; line-height: 1.15; }
+.clinic-mark__tagline { font-size: 13px; color: var(--ink-faint); }
+.login--clinic .btn--primary { background: var(--clinic); }
+.login--clinic .btn--primary:hover:not(:disabled) { background: var(--clinic-deep); }
+.login--clinic .tabs__btn[aria-selected="true"] { border-bottom-color: var(--clinic); }
+.login--clinic .input:focus-visible { border-color: var(--clinic); box-shadow: 0 0 0 3px var(--clinic-wash); }
+.login--clinic :focus-visible { outline-color: var(--clinic); }
+.login--clinic .link-btn { color: var(--clinic); }
+.login__powered { display: flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--ink-faint); }
+.login__powered img { width: 16px; height: 16px; }
+.login__powered strong { font-weight: 500; color: var(--ink-soft); }
+.login__trust { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px 18px; font-size: 12px; color: var(--ink-faint); }
+.login__trust span { display: inline-flex; align-items: center; gap: 6px; }
+.login__trust svg { width: 14px; height: 14px; }
+.login__signature { display: flex; justify-content: center; padding: 0 20px 28px; }
+.login__signature .argentum { transform: scale(0.8); border: 1px solid var(--line); }
+
 /* ---------- Estrutura do app ---------- */
 
 .shell { min-height: 100vh; display: grid; grid-template-columns: 252px minmax(0, 1fr); }

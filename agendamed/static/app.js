@@ -563,24 +563,30 @@ function argentumMark() {
       h("span", { class: "argentum__sub" }, "SOFTWARE")));
 }
 
+/* Login com a marca da clínica: cada clínica entraria com o próprio logo e a própria cor,
+   e o AgendaMed aparece só como assinatura. Aqui, uma clínica de exemplo. */
+const CLINIC_BRAND = { name: "Clínica Vida", initials: "CV", tagline: "Agenda da equipe" };
+
+function clinicHeader() {
+  return h("div", { class: "clinic-mark" },
+    h("span", { class: "clinic-mark__logo", "aria-hidden": "true" }, CLINIC_BRAND.initials),
+    h("div", null,
+      h("p", { class: "clinic-mark__name" }, CLINIC_BRAND.name),
+      h("p", { class: "clinic-mark__tagline" }, CLINIC_BRAND.tagline)));
+}
+
 function renderLogin() {
-  document.title = "Entrar | AgendaMed";
+  document.title = `Entrar | ${CLINIC_BRAND.name}`;
   let mode = "login";
 
-
-  const brand = h("section", { class: "login__brand" },
-    h("div", { class: "brand" }, h("img", { src: "/static/icon.svg", alt: "" }), h("span", null, "AgendaMed")),
-    h("div", null,
-      h("p", { class: "login__eyebrow" }, "Gestão de agenda clínica"),
-      h("p", { class: "login__title" }, "A agenda da clínica, em um só lugar.")),
-    h("div", { class: "login__bottom" },
-      h("p", { class: "login__foot" },
-        h("span", null, icon("shield"), "Conexão protegida por HTTPS"),
-        h("span", null, icon("lock"), "Acesso restrito à equipe")),
-      argentumMark()));
-
-  const card = h("div", { class: "login__card" });
-  const panel = h("main", { class: "login__panel" }, card);
+  const card = h("div", { class: "login__card login__card--boxed" });
+  const panel = h("main", { class: "login__center" },
+    card,
+    h("p", { class: "login__powered" },
+      "tecnologia", h("img", { src: "/static/icon.svg", alt: "" }), h("strong", null, "AgendaMed")),
+    h("p", { class: "login__trust" },
+      h("span", null, icon("shield"), "Conexão protegida por HTTPS"),
+      h("span", null, icon("lock"), "Acesso restrito à equipe")));
   let demoMode = false;
   let signupOpen = true;
 
@@ -653,11 +659,10 @@ function renderLogin() {
     }
 
     fill(card,
-      h("div", null,
-        h("h1", { class: "login__heading" }, isLogin ? "Acesso da equipe" : "Criar uma conta"),
-        h("p", { class: "login__sub" }, isLogin
-          ? "Entre com o e-mail e a senha fornecidos pela sua clínica."
-          : "Use um e-mail que você acessa. A senha precisa ter ao menos 8 caracteres.")),
+      clinicHeader(),
+      h("h1", { class: "visually-hidden" }, `Entrar na agenda da ${CLINIC_BRAND.name}`),
+      !isLogin && h("p", { class: "login__sub" },
+        "Use um e-mail que você acessa. A senha precisa ter ao menos 8 caracteres."),
       tabs, demoBlock, form);
   }
 
@@ -668,7 +673,9 @@ function renderLogin() {
   }
 
   draw();
-  fill(root(), h("div", { class: "login" }, brand, panel));
+  fill(root(), h("div", { class: "login login--clinic" },
+    panel,
+    h("footer", { class: "login__signature" }, argentumMark())));
 }
 
 /* ---------- Agendar (fluxo guiado) ---------- */
