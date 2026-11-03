@@ -207,14 +207,26 @@ select.input { padding-right: 32px; }
 /* Login com a marca da clínica (exemplo): cartão central, cor da clínica nos botões e o
    AgendaMed como assinatura discreta. */
 .login--clinic {
-  --clinic: #3f6b57; --clinic-deep: #2f5343; --clinic-wash: #e8f0ea;
+  --clinic: #3f6b57; --clinic-deep: #2f5343; --clinic-ink: #24402f; --clinic-wash: #e8f0ea;
+  position: relative; isolation: isolate;
   grid-template-columns: minmax(0, 1fr); grid-template-rows: 1fr auto;
   background: var(--paper);
 }
+/* Faixa na cor da clínica, com a marca d'água médica bem suave; o cartão fica por cima
+   da divisa entre a faixa e o fundo claro. */
+.login--clinic::before {
+  content: ""; position: absolute; inset: 0 0 auto; height: 48%; z-index: -1;
+  background: url("/static/marca-dagua.svg") 0 0 / 220px 220px repeat, var(--clinic-ink);
+}
+.login--clinic::after {
+  content: ""; position: absolute; inset: 0 0 auto; height: 48%; z-index: -1;
+  background: var(--clinic-ink); opacity: 0.955;
+}
 .login__center { display: grid; place-content: center; justify-items: center; gap: 14px; padding: 48px 20px 24px; }
 .login__card--boxed {
-  width: min(380px, 100%); max-width: none; gap: 20px; padding: 28px 28px 26px;
+  width: min(400px, 100%); max-width: none; gap: 20px; padding: 30px 30px 28px;
   background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-l);
+  box-shadow: 0 1px 2px rgba(20, 34, 49, 0.06), 0 18px 40px -12px rgba(20, 34, 49, 0.28);
 }
 .clinic-mark { display: flex; align-items: center; gap: 12px; padding-bottom: 18px; border-bottom: 1px solid var(--line); }
 .clinic-mark__logo {
