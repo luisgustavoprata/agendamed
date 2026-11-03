@@ -565,7 +565,22 @@ function argentumMark() {
 
 /* Login com a marca da clínica: cada clínica entraria com o próprio logo e a própria cor,
    e o AgendaMed aparece só como assinatura. Aqui, uma clínica de exemplo. */
-const CLINIC_BRAND = { name: "Clínica Vida", initials: "CV", tagline: "Agenda da equipe" };
+const CLINIC_BRAND = {
+  name: "Clínica Vida", initials: "CV", tagline: "Agenda da equipe",
+  // Cor da clínica no sistema todo: botões, aba ativa, consultas na agenda e destaques.
+  colors: { main: "#3f6b57", deep: "#2f5343", ink: "#24402f", wash: "#e8f0ea", line: "#c4d6ca" },
+};
+
+/** Pinta o sistema com a cor da clínica (troca os tons de destaque usados pelo CSS). */
+function applyClinicTheme(colors) {
+  const style = document.documentElement.style;
+  style.setProperty("--navy", colors.main);
+  style.setProperty("--navy-deep", colors.deep);
+  style.setProperty("--navy-ink", colors.ink);
+  style.setProperty("--navy-wash", colors.wash);
+  style.setProperty("--navy-line", colors.line);
+  document.querySelector('meta[name="theme-color"]')?.setAttribute("content", colors.ink);
+}
 
 function clinicHeader() {
   return h("div", { class: "clinic-mark" },
@@ -1613,4 +1628,5 @@ function navigate({ focus = true } = {}) {
 }
 
 window.addEventListener("hashchange", () => navigate());
+applyClinicTheme(CLINIC_BRAND.colors);
 session.start();
