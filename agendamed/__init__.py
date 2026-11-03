@@ -29,6 +29,9 @@ CONTENT_SECURITY_POLICY = "; ".join([
     "frame-ancestors 'none'",
 ])
 
+# Recursos do navegador que o site nunca usa ficam bloqueados.
+PERMISSIONS_POLICY = "camera=(), microphone=(), geolocation=()"
+
 # Limite do corpo das requisições: a API só recebe JSON pequeno.
 MAX_CONTENT_LENGTH = 64 * 1024
 
@@ -91,7 +94,7 @@ def create_app(config: dict | None = None) -> Flask:
         response.headers.setdefault("X-Content-Type-Options", "nosniff")
         response.headers.setdefault("X-Frame-Options", "DENY")
         response.headers.setdefault("Referrer-Policy", "same-origin")
-        response.headers.setdefault("Permissions-Policy", "camera=(), microphone=(), geolocation=()")
+        response.headers.setdefault("Permissions-Policy", PERMISSIONS_POLICY)
         response.headers.setdefault("Cross-Origin-Opener-Policy", "same-origin")
         if request.is_secure:
             # Navegador passa a usar só HTTPS neste domínio por um ano.

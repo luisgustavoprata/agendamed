@@ -50,8 +50,10 @@ class Receptionist(HttpUser):
     @task(5)
     def day_agenda(self):
         doctor, day = random.choice(self.doctor_ids), random.choice(self.days)
-        self.client.get(f"/doctors/{doctor}/availability?date={day}", name="GET /doctors/:id/availability")
-        self.client.get(f"/appointments?doctor_id={doctor}&date={day}&limit=100", name="GET /appointments (dia)")
+        self.client.get(f"/doctors/{doctor}/availability?date={day}",
+                        name="GET /doctors/:id/availability")
+        self.client.get(f"/appointments?doctor_id={doctor}&date={day}&limit=100",
+                        name="GET /appointments (dia)")
 
     @task(3)
     def search_patient(self):
