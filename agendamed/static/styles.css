@@ -614,3 +614,74 @@ select.input { padding-right: 32px; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }
+
+/* ---------- Gestão: prontuário, financeiro, estoque e painel ---------- */
+
+.subtabs { display: flex; flex-wrap: wrap; gap: 4px; border-bottom: 1px solid var(--line); }
+.subtabs__btn {
+  appearance: none; background: none; border: 0; border-bottom: 2px solid transparent;
+  padding: 10px 14px; margin-bottom: -1px; font: inherit; font-weight: 500; color: var(--ink-soft); cursor: pointer;
+}
+.subtabs__btn:hover { color: var(--ink); }
+.subtabs__btn[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--navy); }
+.subtabs__btn:focus-visible { outline: 2px solid var(--navy); outline-offset: -2px; }
+
+.stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 12px; }
+.stat { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-l); padding: 14px 16px; }
+.stat__label { font-size: 13px; color: var(--ink-soft); }
+.stat__value { margin-top: 4px; font-size: 20px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.stat--good .stat__value, .pos { color: var(--sage); }
+.stat--bad .stat__value, .neg { color: var(--brick); }
+
+.bar { display: inline-block; vertical-align: middle; width: calc(var(--w) * 0.6); max-width: 60%; height: 8px; margin-right: 8px; border-radius: 4px; background: var(--navy); }
+.bar--good { background: var(--sage); }
+.bar--bad { background: var(--brick); }
+.bars-table td { white-space: nowrap; }
+
+.kv { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.kv li { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--line); }
+.kv li:last-child { border-bottom: 0; }
+.panel__row { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+
+.alert-box { margin: 12px 0; padding: 12px 14px; border-radius: var(--radius-m); background: var(--brick-wash); color: var(--brick); border: 1px solid #ecc9c0; }
+.alert-box p + p { margin-top: 4px; }
+.small { font-size: 13px; }
+
+.record { display: grid; gap: 16px; min-height: 200px; }
+.timeline { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+.timeline__item { padding: 12px 14px; border: 1px solid var(--line); border-left: 3px solid var(--navy); border-radius: var(--radius-m); background: var(--surface); }
+.timeline__meta { font-size: 13px; color: var(--ink-soft); }
+.timeline__text { margin-top: 6px; white-space: pre-wrap; }
+
+.rx-items { display: grid; gap: 10px; }
+.rx-item { display: grid; grid-template-columns: 2fr 1fr 2fr; gap: 10px; padding: 10px; border: 1px dashed var(--line-strong); border-radius: var(--radius-m); }
+@media (max-width: 720px) { .rx-item { grid-template-columns: minmax(0, 1fr); } }
+
+details.panel summary { cursor: pointer; }
+details.panel[open] summary { margin-bottom: 12px; }
+
+/* Impressão de receitas e guias: só o documento aparece. */
+.print-area { display: none; }
+@media print {
+  body.is-printing > :not(.print-area) { display: none !important; }
+  body.is-printing { background: #fff; }
+  body.is-printing .print-area { display: block; color: #000; font-family: var(--font); }
+  .print-doc { padding: 12mm 14mm; break-after: page; }
+  .print-doc:last-child { break-after: auto; }
+  .print-doc__head { border-bottom: 2px solid #000; padding-bottom: 8px; margin-bottom: 18px; }
+  .print-doc__clinic { font-family: var(--font-display); font-size: 20pt; font-weight: 600; }
+  .print-doc__title { text-align: center; font-size: 14pt; letter-spacing: 0.08em; margin: 12px 0; }
+  .print-doc__note { text-align: center; font-size: 9pt; }
+  .print-doc__patient { display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; margin: 16px 0; }
+  .print-doc__patient dt { font-weight: 600; }
+  .print-doc__patient dd { margin: 0; }
+  .print-doc__items { margin: 18px 0; padding-left: 22px; display: grid; gap: 14px; font-size: 12pt; }
+  .print-doc__text { white-space: pre-wrap; font-size: 12pt; margin: 18px 0; }
+  .print-doc__sign { margin-top: 60px; text-align: center; }
+  .print-doc__line { margin: 50px auto 0; width: 60%; border-top: 1px solid #000; padding-top: 4px; }
+  .print-doc__line--wide { width: 80%; }
+  .guide-grid { display: grid; grid-template-columns: repeat(2, 1fr); border-top: 1px solid #000; border-left: 1px solid #000; }
+  .guide-cell { border-right: 1px solid #000; border-bottom: 1px solid #000; padding: 4px 6px 6px; }
+  .guide-grid dt { font-size: 7.5pt; }
+  .guide-grid dd { margin: 0; font-size: 11pt; }
+}

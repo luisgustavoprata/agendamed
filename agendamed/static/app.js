@@ -46,6 +46,9 @@ const ICONS = {
   book: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4M12 13v5M9.5 15.5h5"/>',
   shield: '<path d="M12 3l7 3v5c0 4.5-3 8.5-7 10-4-1.5-7-5.5-7-10V6z"/><path d="M9 12l2 2 4-4"/>',
   lock: '<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>',
+  money: '<rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/><path d="M6 10v4M18 10v4"/>',
+  box: '<path d="M3 7.5L12 3l9 4.5v9L12 21l-9-4.5z"/><path d="M3 7.5l9 4.5 9-4.5M12 12v9"/>',
+  chart: '<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>',
 };
 
 function icon(name) {
@@ -220,6 +223,10 @@ const api = {
 
   post(path, body = {}) {
     return this.request("POST", path, body);
+  },
+
+  put(path, body = {}) {
+    return this.request("PUT", path, body);
   },
 
   patch(path, body = {}) {
@@ -1384,6 +1391,12 @@ async function renderAppointments(main, isCurrent) {
                   onclick: () => act(ap, "complete", "Consulta concluída."),
                 }, "Concluir"));
               }
+              if (ap.status !== "cancelled") {
+                buttons.push(h("button", {
+                  class: "btn btn--ghost btn--small", type: "button",
+                  onclick: () => openChargeDialog(ap, () => load()),
+                }, "Faturar"));
+              }
               if (ap.status === "scheduled" && start > now) {
                 buttons.push(confirmButton("Cancelar", "Confirmar", () => act(ap, "cancel", "Consulta cancelada."), "btn--small"));
               }
@@ -1526,11 +1539,18 @@ async function renderPatients(main, isCurrent) {
             { label: "Telefone", class: "num", render: (p) => p.phone || h("span", { class: "muted" }, "Não informado") },
             {
               label: "Ações", class: "actions",
-              render: (p) => h("button", {
-                class: "btn btn--ghost btn--small", type: "button",
-                "aria-label": `Editar ${p.name}`,
-                onclick: () => openPatientDialog(() => load(), p),
-              }, "Editar"),
+              render: (p) => [
+                h("button", {
+                  class: "btn btn--primary btn--small", type: "button",
+                  "aria-label": `Prontuário de ${p.name}`,
+                  onclick: () => openRecordDialog(p),
+                }, "Prontuário"),
+                h("button", {
+                  class: "btn btn--ghost btn--small", type: "button",
+                  "aria-label": `Editar ${p.name}`,
+                  onclick: () => openPatientDialog(() => load(), p),
+                }, "Editar"),
+              ],
             },
           ],
         }),
@@ -1554,6 +1574,9 @@ const ROUTES = [
   { path: "consultas", label: "Consultas", icon: "list", render: renderAppointments },
   { path: "medicos", label: "Médicos", icon: "doctor", render: renderDoctors },
   { path: "pacientes", label: "Pacientes", icon: "users", render: renderPatients },
+  { path: "financeiro", label: "Financeiro", icon: "money", render: renderFinance },
+  { path: "estoque", label: "Estoque", icon: "box", render: renderStock },
+  { path: "gestao", label: "Gestão", icon: "chart", render: renderManagement },
 ];
 
 let renderSeq = 0;

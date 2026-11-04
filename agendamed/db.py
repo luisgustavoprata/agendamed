@@ -9,6 +9,7 @@ import click
 from flask import Flask, current_app, g
 
 SCHEMA_PATH = Path(__file__).with_name("schema.sql")
+GESTAO_SCHEMA_PATH = Path(__file__).with_name("schema_gestao.sql")
 
 
 def get_db() -> sqlite3.Connection:
@@ -57,6 +58,12 @@ def _upgrade(conn) -> None:
     columns = {row["name"] for row in conn.execute("PRAGMA table_info(doctors)")}
     if "active" not in columns:
         conn.execute("ALTER TABLE doctors ADD COLUMN active INTEGER NOT NULL DEFAULT 1")
+    # Módulos de gestão: usam clinic_id (sempre 1 nesta versão de uma clínica só).
+    for table in ("patients", "doctors", "appointments"):
+        columns = {row["name"] for row in conn.execute(f"PRAGMA table_info({table})")}
+        if "clinic_id" not in columns:
+            conn.execute(f"ALTER TABLE {table} ADD COLUMN clinic_id INTEGER NOT NULL DEFAULT 1")
+    conn.executescript(GESTAO_SCHEMA_PATH.read_text(encoding="utf-8"))
 
 
 @click.command("init-db")

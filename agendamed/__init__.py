@@ -10,7 +10,7 @@ from agendamed import db, errors
 from agendamed.accounts import configured_accounts, ensure_accounts
 from agendamed.config import DEFAULT_SECRET_KEY, Config
 from agendamed.ratelimit import LoginRateLimiter
-from agendamed.routes import appointments, auth, docs, doctors, patients
+from agendamed.routes import appointments, auth, docs, doctors, gestao, patients
 
 __version__ = "1.2.0"
 
@@ -70,7 +70,7 @@ def create_app(config: dict | None = None) -> Flask:
     db.init_app(app)
     errors.register_error_handlers(app)
 
-    for blueprint in (auth.bp, doctors.bp, patients.bp, appointments.bp, docs.bp):
+    for blueprint in (auth.bp, doctors.bp, patients.bp, appointments.bp, docs.bp, gestao.bp):
         app.register_blueprint(blueprint)
 
     @app.get("/")
@@ -100,7 +100,9 @@ def create_app(config: dict | None = None) -> Flask:
         if request.is_secure:
             # Navegador passa a usar só HTTPS neste domínio por um ano.
             response.headers.setdefault("Strict-Transport-Security", "max-age=31536000")
-        if request.path.startswith(("/auth", "/doctors", "/patients", "/appointments")):
+        if request.path.startswith(("/auth", "/doctors", "/patients", "/appointments",
+                                    "/prescriptions", "/finance", "/stock", "/reports",
+                                    "/procedures", "/health-plans")):
             # Dados de pacientes não devem ficar guardados em cache de navegador ou proxy.
             response.headers.setdefault("Cache-Control", "no-store")
         return response

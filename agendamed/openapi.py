@@ -7,6 +7,8 @@ toda rota registrada no Flask aparece aqui.
 
 from functools import cache
 
+from agendamed.gestao import REQUEST_MODELS as GESTAO_MODELS
+
 from agendamed.schemas import (
     AppointmentCreate,
     DoctorCreate,
@@ -96,6 +98,7 @@ REQUEST_MODELS = {
 ERROR_DESCRIPTIONS = {
     400: "Parâmetro ou corpo da requisição malformado.",
     401: "Token ausente, inválido ou expirado.",
+    403: "Ação não permitida.",
     404: "Recurso não encontrado.",
     409: "Conflito com o estado atual (ex.: horário já ocupado).",
     422: "Dados inválidos ou regra de negócio violada.",
@@ -148,6 +151,128 @@ def _op(summary, tag, *, ok, ok_schema=None, body=None, params=(), errors=(), au
         }
     operation["security"] = [{"bearerAuth": []}] if auth else []
     return operation
+
+
+def _gestao_paths() -> dict:
+    patient_id = _id("patient_id", "do paciente")
+    appointment_id = _id("appointment_id", "da consulta")
+    period = [
+        _param("start", "query", {"type": "string", "format": "date"},
+               "Início do período (padrão: dia 1 do mês atual)."),
+        _param("end", "query", {"type": "string", "format": "date"},
+               "Fim do período (padrão: último dia do mês)."),
+    ]
+
+    def op(summary, tag, ok=200, body=None, params=(), errors=(403, 404)):
+        return _op(summary, tag, ok=ok, ok_schema=None if ok == 204 else "Result", body=body,
+                   params=params, errors=(*errors, 422) if body else errors)
+
+    tx_id = _id("tx_id", "do lançamento")
+    item_id = _id("item_id", "do item de estoque")
+    return {
+        "/patients/{patient_id}/record": {"get": op(
+            "Prontuário do paciente (ficha clínica e registros)", "Prontuário",
+            params=[patient_id])},
+        "/patients/{patient_id}/record/summary": {"put": op(
+            "Salva a ficha clínica (alergias, doenças, medicamentos)", "Prontuário",
+            body="ClinicalSummaryUpdate", params=[patient_id])},
+        "/patients/{patient_id}/record/entries": {"post": op(
+            "Adiciona um registro ao prontuário", "Prontuário", ok=201,
+            body="RecordEntryCreate", params=[patient_id])},
+        "/patients/{patient_id}/prescriptions": {
+            "get": op("Receitas, atestados e pedidos de exame do paciente", "Prescrições",
+                      params=[patient_id]),
+            "post": op("Emite uma receita, atestado ou pedido de exame", "Prescrições", ok=201,
+                       body="PrescriptionCreate", params=[patient_id]),
+        },
+        "/prescriptions/{prescription_id}": {"get": op(
+            "Uma prescrição, com dados do médico e do paciente para impressão", "Prescrições",
+            params=[_id("prescription_id", "da prescrição")])},
+        "/procedures": {
+            "get": op("Lista procedimentos", "Cadastros", errors=()),
+            "post": op("Cadastra um procedimento", "Cadastros", ok=201,
+                       body="ProcedureCreate", errors=(403, 409)),
+        },
+        "/procedures/{procedure_id}": {"put": op(
+            "Altera um procedimento", "Cadastros", body="ProcedureCreate",
+            params=[_id("procedure_id", "do procedimento")], errors=(403, 404, 409))},
+        "/health-plans": {
+            "get": op("Lista convênios", "Cadastros", errors=()),
+            "post": op("Cadastra um convênio", "Cadastros", ok=201, body="HealthPlanCreate",
+                       errors=(403, 409)),
+        },
+        "/health-plans/{plan_id}": {"put": op(
+            "Altera um convênio", "Cadastros", body="HealthPlanCreate",
+            params=[_id("plan_id", "do convênio")], errors=(403, 404, 409))},
+        "/finance/accounts": {
+            "get": op("Contas (caixa, banco) com saldo", "Financeiro", errors=(403,)),
+            "post": op("Cria uma conta", "Financeiro", ok=201, body="FinanceAccountCreate",
+                       errors=(403, 409)),
+        },
+        "/finance/transactions": {
+            "get": op("Lançamentos do período", "Financeiro", errors=(400, 403), params=[
+                *period,
+                _param("kind", "query", {"type": "string", "enum": ["income", "expense"]},
+                       "Receitas ou despesas."),
+                _param("status", "query", {"type": "string", "enum": ["paid", "open"]},
+                       "Pagos ou em aberto."),
+                _param("account_id", "query", {"type": "integer"}, "Só uma conta."),
+            ]),
+            "post": op("Lança uma receita ou despesa", "Financeiro", ok=201,
+                       body="TransactionCreate"),
+        },
+        "/finance/transactions/{tx_id}": {
+            "patch": op("Altera um lançamento", "Financeiro", body="TransactionUpdate",
+                        params=[tx_id]),
+            "delete": op("Exclui um lançamento em aberto", "Financeiro", ok=204,
+                         params=[tx_id], errors=(403, 404, 409)),
+        },
+        "/finance/transactions/{tx_id}/pay": {"post": op(
+            "Marca como pago/recebido", "Financeiro", body="TransactionPay", params=[tx_id],
+            errors=(403, 404, 409))},
+        "/finance/transactions/{tx_id}/unpay": {"post": op(
+            "Desfaz o pagamento", "Financeiro", params=[tx_id])},
+        "/finance/cashflow": {"get": op(
+            "Fluxo de caixa: realizado e previsto, por dia, categoria e conta", "Financeiro",
+            params=period, errors=(400, 403))},
+        "/appointments/{appointment_id}/charge": {
+            "get": op("Faturamento de uma consulta", "Financeiro", params=[appointment_id]),
+            "post": op("Fatura uma consulta (particular ou convênio)", "Financeiro", ok=201,
+                       body="AppointmentCharge", params=[appointment_id],
+                       errors=(403, 404, 409)),
+        },
+        "/finance/payout-rules": {
+            "get": op("Regras de repasse aos médicos", "Financeiro", errors=(403,)),
+            "put": op("Define a porcentagem de repasse de um médico", "Financeiro",
+                      body="PayoutRuleSet"),
+        },
+        "/finance/payout-rules/{rule_id}": {"delete": op(
+            "Remove uma regra de repasse", "Financeiro", ok=204,
+            params=[_id("rule_id", "da regra")], errors=(403,))},
+        "/finance/payouts": {"get": op(
+            "Repasse calculado de cada médico sobre o recebido", "Financeiro", params=period,
+            errors=(400, 403))},
+        "/finance/tiss": {"get": op(
+            "Lote de guias de um convênio no período", "Financeiro", errors=(400, 403, 404),
+            params=[_param("health_plan_id", "query", {"type": "integer"}, "Convênio.",
+                           required=True), *period])},
+        "/stock/items": {
+            "get": op("Itens do estoque", "Estoque", errors=(403,)),
+            "post": op("Cadastra um item", "Estoque", ok=201, body="StockItemCreate",
+                       errors=(403, 409)),
+        },
+        "/stock/items/{item_id}": {"patch": op(
+            "Altera um item", "Estoque", body="StockItemUpdate", params=[item_id],
+            errors=(403, 404, 409))},
+        "/stock/items/{item_id}/movements": {
+            "get": op("Entradas e saídas de um item", "Estoque", params=[item_id]),
+            "post": op("Registra entrada (+) ou saída (-)", "Estoque", ok=201,
+                       body="StockMovementCreate", params=[item_id]),
+        },
+        "/reports/overview": {"get": op(
+            "Painel de gestão: consultas, faltas, faturamento, novos pacientes", "Gestão",
+            params=period, errors=(400, 403))},
+    }
 
 
 def _paths() -> dict:
@@ -230,10 +355,14 @@ def _paths() -> dict:
 
 @cache
 def build_spec(version: str) -> dict:
-    schemas = {
-        name: model.model_json_schema(ref_template=REF) for name, model in REQUEST_MODELS.items()
-    }
+    schemas = {}
+    for name, model in {**REQUEST_MODELS, **GESTAO_MODELS}.items():
+        schema = model.model_json_schema(ref_template=REF)
+        # Modelos aninhados (ex.: os itens de uma receita) viram componentes próprios.
+        schemas.update(schema.pop("$defs", {}))
+        schemas[name] = schema
     schemas.update(RESPONSE_SCHEMAS)
+    schemas["Result"] = {"type": "object", "description": "Objeto com os dados pedidos."}
     return {
         "openapi": "3.1.0",
         "info": {
@@ -244,9 +373,11 @@ def build_spec(version: str) -> dict:
         },
         "tags": [
             {"name": "Autenticação"}, {"name": "Médicos"}, {"name": "Pacientes"},
-            {"name": "Consultas"}, {"name": "Sistema"},
+            {"name": "Consultas"}, {"name": "Prontuário"}, {"name": "Prescrições"},
+            {"name": "Financeiro"}, {"name": "Estoque"}, {"name": "Gestão"},
+            {"name": "Cadastros"}, {"name": "Sistema"},
         ],
-        "paths": _paths(),
+        "paths": {**_paths(), **_gestao_paths()},
         "components": {
             "schemas": schemas,
             "securitySchemes": {
