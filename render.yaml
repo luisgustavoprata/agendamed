@@ -12,7 +12,25 @@ services:
       - key: SECRET_KEY
         generateValue: true          # o Render gera uma chave aleatória e segura
       - key: SEED_DEMO_DATA
-        value: "true"                # demonstração pública já com médicos e consultas
+        value: "false"               # sem clínica de exemplo nem botão de demonstração
+      # Contas de acesso da equipe (e-mail e senha preenchidos no painel do Render).
+      # Para trocar um e-mail ou senha: Environment > edite o valor > Save (reinicia sozinho).
+      - key: ADMIN_EMAIL
+        sync: false
+      - key: ADMIN_PASSWORD
+        sync: false
+      - key: DOCTOR_EMAIL
+        sync: false
+      - key: DOCTOR_PASSWORD
+        sync: false
+      - key: DOCTOR_NAME
+        sync: false
+      - key: SECRETARY_EMAIL
+        sync: false
+      - key: SECRETARY_PASSWORD
+        sync: false
+      - key: SECRETARY_NAME
+        sync: false
       - key: ALLOW_SIGNUP
         value: "false"               # todos os usuários veem os mesmos dados: sem cadastro aberto
       - key: CLINIC_TIMEZONE

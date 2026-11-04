@@ -243,8 +243,6 @@ const state = {
 };
 
 const PAGE_SIZE = 20;
-const DEMO_EMAIL = "admin@agendamed.dev";
-const DEMO_PASSWORD = "admin12345";
 
 const session = {
   async start() {
@@ -602,29 +600,14 @@ function renderLogin() {
     h("p", { class: "login__trust" },
       h("span", null, icon("shield"), "Conexão protegida por HTTPS"),
       h("span", null, icon("lock"), "Acesso restrito à equipe")));
-  let demoMode = false;
   let signupOpen = true;
 
-  // Em modo demonstração (SEED_DEMO_DATA), o servidor avisa pelo /health e a tela
-  // oferece entrada com um clique, sem precisar criar conta. Com o cadastro fechado
-  // (ALLOW_SIGNUP=false), a aba "Criar conta" some.
+  // Com o cadastro fechado (ALLOW_SIGNUP=false), o servidor avisa pelo /health e a aba
+  // "Criar conta" some: só entra quem tem acesso criado pela clínica.
   api.get("/health").then((info) => {
-    demoMode = Boolean(info?.demo);
     signupOpen = info?.signup !== false;
-    if ((demoMode || !signupOpen) && mode === "login") draw();
+    if (!signupOpen && mode === "login") draw();
   }).catch(() => {});
-
-  async function enterDemo(button) {
-    button.disabled = true;
-    button.textContent = "Entrando…";
-    try {
-      await session.login(DEMO_EMAIL, DEMO_PASSWORD);
-    } catch (err) {
-      toast(err.message, "error");
-      button.disabled = false;
-      button.textContent = "Entrar na demonstração";
-    }
-  }
 
   function draw() {
     const isLogin = mode === "login";
@@ -642,7 +625,7 @@ function renderLogin() {
         hint: isLogin ? null : "Mínimo de 8 caracteres",
       }),
       h("button", {
-        class: `btn ${isLogin && demoMode ? "btn--ghost" : "btn--primary"} btn--block`, type: "submit",
+        class: "btn btn--primary btn--block", type: "submit",
       }, isLogin ? "Entrar" : "Criar conta"));
 
     form.addEventListener("submit", async (event) => {
@@ -661,24 +644,12 @@ function renderLogin() {
       }
     });
 
-    let demoBlock = null;
-    if (isLogin && demoMode) {
-      const demoButton = h("button", { class: "btn btn--primary btn--block btn--large", type: "button" },
-        "Entrar na demonstração");
-      demoButton.addEventListener("click", () => enterDemo(demoButton));
-      demoBlock = h("div", { class: "demo-entry" },
-        demoButton,
-        h("p", { class: "demo-entry__hint" },
-          "Clínica de exemplo com médicos, pacientes e consultas. Não precisa de cadastro."),
-        h("p", { class: "login__divider" }, "ou entre com a sua conta"));
-    }
-
     fill(card,
       clinicHeader(),
       h("h1", { class: "visually-hidden" }, `Entrar na agenda da ${CLINIC_BRAND.name}`),
       !isLogin && h("p", { class: "login__sub" },
         "Use um e-mail que você acessa. A senha precisa ter ao menos 8 caracteres."),
-      tabs, demoBlock, form);
+      tabs, form);
   }
 
   function switchTo(next) {

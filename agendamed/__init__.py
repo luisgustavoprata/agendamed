@@ -7,6 +7,7 @@ from flask import Flask, request
 from werkzeug.middleware.proxy_fix import ProxyFix
 
 from agendamed import db, errors
+from agendamed.accounts import configured_accounts, ensure_accounts
 from agendamed.config import DEFAULT_SECRET_KEY, Config
 from agendamed.ratelimit import LoginRateLimiter
 from agendamed.routes import appointments, auth, docs, doctors, patients
@@ -110,6 +111,10 @@ def create_app(config: dict | None = None) -> Flask:
             from agendamed.seed import seed
 
             seed(db.get_db())
+        # Contas da equipe (ADMIN_*, DOCTOR_*, SECRETARY_*), criadas ou atualizadas a cada início.
+        if "STAFF_ACCOUNTS" not in app.config:
+            app.config["STAFF_ACCOUNTS"] = configured_accounts()
+        ensure_accounts(db.get_db(), app.config["STAFF_ACCOUNTS"])
 
     if not app.config.get("TESTING") and app.config["SECRET_KEY"] == DEFAULT_SECRET_KEY:
         app.logger.warning("SECRET_KEY padrão em uso. Defina a variável de ambiente SECRET_KEY.")
