@@ -9,6 +9,7 @@ from agendamed.errors import BusinessRuleError, ConflictError
 from agendamed.repositories import DoctorRepository, PatientRepository, UserRepository
 from agendamed.schemas import AppointmentCreate, DoctorCreate, PatientCreate
 from agendamed.security import hash_password
+from agendamed.seed_gestao import seed_management
 from agendamed.services.appointments import AppointmentService
 
 DOCTORS = [
@@ -63,10 +64,13 @@ def _working_days(start: date, count: int) -> list[date]:
     return days
 
 
-def seed(conn: sqlite3.Connection) -> None:
-    """Cria dados de demonstração. Não faz nada se eles já existirem."""
+def seed(conn: sqlite3.Connection, *, demo_login: bool = True) -> None:
+    """Cria dados de demonstração. Não faz nada se eles já existirem.
+
+    `demo_login=False` cria só os exemplos, sem a conta pública admin@agendamed.dev.
+    """
     users = UserRepository(conn)
-    if users.get_by_email("admin@agendamed.dev") is None:
+    if demo_login and users.get_by_email("admin@agendamed.dev") is None:
         iterations = current_app.config["PASSWORD_HASH_ITERATIONS"]
         password_hash = hash_password("admin12345", iterations)
         try:
@@ -101,3 +105,8 @@ def seed(conn: sqlite3.Connection) -> None:
                 )
             except BusinessRuleError:
                 continue  # horário de hoje que já passou
+
+    # Prontuário, financeiro, estoque e gestão com movimento (quem registra: o primeiro login).
+    first_user = conn.execute("SELECT id FROM users ORDER BY id LIMIT 1").fetchone()
+    if first_user is not None:
+        seed_management(conn, doctor_ids, patient_ids, first_user["id"], now)

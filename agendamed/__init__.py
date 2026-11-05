@@ -109,14 +109,16 @@ def create_app(config: dict | None = None) -> Flask:
 
     with app.app_context():
         db.init_db()
-        if app.config["SEED_DEMO_DATA"]:
-            from agendamed.seed import seed
-
-            seed(db.get_db())
         # Contas da equipe (ADMIN_*, DOCTOR_*, SECRETARY_*), criadas ou atualizadas a cada início.
         if "STAFF_ACCOUNTS" not in app.config:
             app.config["STAFF_ACCOUNTS"] = configured_accounts()
         ensure_accounts(db.get_db(), app.config["STAFF_ACCOUNTS"])
+        if app.config["SEED_DEMO_DATA"]:
+            from agendamed.seed import seed
+
+            # Com contas da equipe configuradas, os exemplos entram sem a conta pública de
+            # demonstração (admin@agendamed.dev): só a equipe entra.
+            seed(db.get_db(), demo_login=not app.config["STAFF_ACCOUNTS"])
 
     if not app.config.get("TESTING") and app.config["SECRET_KEY"] == DEFAULT_SECRET_KEY:
         app.logger.warning("SECRET_KEY padrão em uso. Defina a variável de ambiente SECRET_KEY.")
