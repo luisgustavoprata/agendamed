@@ -624,7 +624,28 @@ function renderLogin() {
     if (!signupOpen && mode === "login") draw();
   }).catch(() => {});
 
+  /** "Esqueci minha senha": nesta versão as senhas da equipe vêm do responsável (variáveis
+   * do servidor), então a tela explica com quem falar em vez de mandar e-mail. */
+  function drawForgot() {
+    const phone = CLINIC_BRAND.phone;
+    fill(card,
+      h("div", { class: "vida-card-head" },
+        h("h2", { class: "vida-card-head__title" }, "Esqueceu a senha?"),
+        h("p", { class: "vida-card-head__sub" }, "Sem problema. Quem cria e redefine as senhas da equipe é o responsável pela clínica.")),
+      h("ol", { class: "forgot-steps" },
+        h("li", null, h("strong", null, "Fale com o responsável"), h("span", null, "Peça uma senha nova para o seu e-mail de acesso.")),
+        h("li", null, h("strong", null, "Ele redefine a senha"), h("span", null, "No painel do servidor, onde ficam as contas da equipe.")),
+        h("li", null, h("strong", null, "Entre com a senha nova"), h("span", null, "Ela já vale no próximo acesso."))),
+      h("div", { class: "forgot-contact" },
+        icon("phone"),
+        h("div", null,
+          h("p", { class: "forgot-contact__label" }, "Recepção da clínica"),
+          h("a", { href: `tel:+55${phone.replace(/\D/g, "")}` }, phone))),
+      h("button", { class: "btn btn--primary btn--block", type: "button", onclick: () => switchTo("login") }, "Voltar para entrar"));
+  }
+
   function draw() {
+    if (mode === "forgot") return drawForgot();
     const isLogin = mode === "login";
     const tabs = signupOpen && h("div", { class: "tabs", role: "tablist", "aria-label": "Acesso" },
       h("button", { class: "tabs__btn", type: "button", role: "tab", "aria-selected": String(isLogin), onclick: () => switchTo("login") }, "Entrar"),
@@ -641,7 +662,8 @@ function renderLogin() {
       }),
       h("button", {
         class: "btn btn--primary btn--block", type: "submit",
-      }, isLogin ? "Entrar" : "Criar conta"));
+      }, isLogin ? "Entrar" : "Criar conta"),
+      isLogin && h("button", { class: "link-btn forgot-link", type: "button", onclick: () => switchTo("forgot") }, "Esqueci minha senha"));
 
     form.addEventListener("submit", async (event) => {
       event.preventDefault();

@@ -759,3 +759,24 @@ details.panel[open] summary { margin-bottom: 12px; }
   .vida-top__contact { display: none; }
   .vida-band { height: max(380px, 48vh); }
 }
+
+/* ---------- Esqueci minha senha (Clínica Vida) ---------- */
+.forgot-link { justify-self: start; font-size: 14.5px; }
+.login--clinic .forgot-link { color: var(--clinic); }
+.forgot-steps { margin: 0; padding: 0; list-style: none; counter-reset: step; display: grid; gap: 14px; }
+.forgot-steps li { counter-increment: step; display: grid; grid-template-columns: 30px minmax(0, 1fr); column-gap: 12px; }
+.forgot-steps li::before {
+  content: counter(step); grid-row: span 2; display: grid; place-items: center; width: 30px; height: 30px;
+  border-radius: 50%; background: var(--clinic-wash, var(--navy-wash)); color: var(--clinic, var(--navy));
+  font-weight: 600; font-size: 14px; font-variant-numeric: tabular-nums;
+}
+.forgot-steps strong { font-weight: 600; }
+.forgot-steps span { font-size: 14px; color: var(--ink-soft); }
+.forgot-contact {
+  display: flex; align-items: center; gap: 12px; padding: 14px 16px;
+  border-radius: var(--radius-l); background: var(--paper);
+}
+.forgot-contact svg { width: 20px; height: 20px; color: var(--clinic, var(--navy)); flex: none; }
+.forgot-contact__label { margin: 0; font-size: 12.5px; color: var(--ink-faint); }
+.forgot-contact a { font-weight: 600; font-size: 16px; color: var(--ink); text-decoration: none; font-variant-numeric: tabular-nums; }
+.forgot-contact a:hover { text-decoration: underline; text-underline-offset: 3px; }
