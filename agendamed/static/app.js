@@ -618,13 +618,15 @@ function renderLogin() {
     h("p", { class: "login__trust" },
       h("span", null, icon("shield"), "Conexão protegida por HTTPS"),
       h("span", null, icon("lock"), "Acesso restrito à equipe")));
-  let signupOpen = true;
+  // Começa fechado: a aba "Criar conta" só aparece se o servidor disser que o cadastro está
+  // aberto (antes ela piscava na tela enquanto o /health não respondia).
+  let signupOpen = false;
 
   // Com o cadastro fechado (ALLOW_SIGNUP=false), o servidor avisa pelo /health e a aba
   // "Criar conta" some: só entra quem tem acesso criado pela clínica.
   api.get("/health").then((info) => {
-    signupOpen = info?.signup !== false;
-    if (!signupOpen && mode === "login") draw();
+    signupOpen = info?.signup === true;
+    if (signupOpen && mode === "login") draw();
   }).catch(() => {});
 
   /** "Esqueci minha senha": nesta versão as senhas da equipe vêm do responsável (variáveis
