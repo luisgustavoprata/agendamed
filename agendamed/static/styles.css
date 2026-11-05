@@ -226,18 +226,28 @@ select.input { padding-right: 32px; }
 }
 .login__center { display: grid; place-content: center; justify-items: center; gap: 14px; padding: 48px 20px 24px; }
 .login__card--boxed {
-  width: min(400px, 100%); max-width: none; gap: 20px; padding: 30px 30px 28px;
+  width: min(540px, calc(100vw - 32px)); max-width: none; gap: 26px; padding: 40px 44px 36px;
   background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-l);
   box-shadow: 0 1px 2px rgba(20, 34, 49, 0.06), 0 18px 40px -12px rgba(20, 34, 49, 0.28);
 }
-.clinic-mark { display: flex; align-items: center; gap: 12px; padding-bottom: 18px; border-bottom: 1px solid var(--line); }
+.clinic-mark { display: flex; align-items: center; gap: 16px; padding-bottom: 24px; border-bottom: 1px solid var(--line); }
 .clinic-mark__logo {
-  width: 44px; height: 44px; flex: none; border-radius: var(--radius-l);
+  width: 60px; height: 60px; flex: none; border-radius: 12px;
   display: grid; place-items: center; background: var(--clinic-wash); color: var(--clinic);
-  font-family: var(--font-display); font-size: 17px; font-weight: 600; letter-spacing: 0.02em;
+  font-family: var(--font-display); font-size: 23px; font-weight: 600; letter-spacing: 0.02em;
 }
-.clinic-mark__name { font-family: var(--font-display); font-size: 21px; font-weight: 600; line-height: 1.15; }
-.clinic-mark__tagline { font-size: 13px; color: var(--ink-faint); }
+.clinic-mark__name { font-family: var(--font-display); font-size: 28px; font-weight: 600; line-height: 1.15; }
+.clinic-mark__tagline { margin-top: 2px; font-size: 15px; color: var(--ink-faint); }
+/* Cartão de entrada maior: campos, abas e botão acompanham (só CSS, sem zoom). */
+.login--clinic .login__card--boxed .input { min-height: 50px; font-size: 16px; }
+.login--clinic .login__card--boxed .btn--primary { min-height: 50px; font-size: 16px; }
+.login--clinic .login__card--boxed .field__label { font-size: 15px; }
+.login--clinic .login__card--boxed .tabs__btn { min-height: 48px; font-size: 16px; }
+@media (max-width: 480px) {
+  .login__card--boxed { padding: 26px 20px; }
+  .clinic-mark__logo { width: 48px; height: 48px; font-size: 19px; }
+  .clinic-mark__name { font-size: 22px; }
+}
 .login--clinic .btn--primary { background: var(--clinic); }
 .login--clinic .btn--primary:hover:not(:disabled) { background: var(--clinic-deep); }
 .login--clinic .tabs__btn[aria-selected="true"] { border-bottom-color: var(--clinic); }
