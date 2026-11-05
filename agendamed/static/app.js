@@ -209,7 +209,7 @@ const api = {
       if (response.status === 401 && token && path !== "/auth/login") session.expire();
       throw new ApiError(response.status, data?.detail || "Erro inesperado no servidor.", data?.errors || []);
     }
-    return data;
+    return data ?? {}; // 204 (ex.: excluir) não tem corpo
   },
 
   get(path, params) {
@@ -572,6 +572,8 @@ function argentumMark() {
    e o AgendaMed aparece só como assinatura. Aqui, uma clínica de exemplo. */
 const CLINIC_BRAND = {
   name: "Clínica Vida", initials: "CV", tagline: "Agenda da equipe",
+  // Saem no cabeçalho das receitas, atestados e pedidos de exame.
+  address: "Rua das Palmeiras, 250, Centro, Rio Verde/GO", phone: "(64) 3620-0000",
   // Cor da clínica no sistema todo: botões, aba ativa, consultas na agenda e destaques.
   colors: { main: "#3f6b57", deep: "#2f5343", ink: "#24402f", wash: "#e8f0ea", line: "#c4d6ca" },
 };

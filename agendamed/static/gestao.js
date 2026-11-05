@@ -127,6 +127,7 @@ function printPrescription(rx) {
   const doc = h("article", { class: "print-doc" },
     h("header", { class: "print-doc__head" },
       h("p", { class: "print-doc__clinic" }, clinicName()),
+      h("p", null, `${CLINIC_BRAND.address} · Telefone: ${CLINIC_BRAND.phone}`),
       h("p", null, `${rx.doctor_name} · ${rx.doctor_specialty} · CRM ${rx.doctor_crm}`)),
     h("h1", { class: "print-doc__title" }, kindTitle),
     rx.kind === "controle_especial" && h("p", { class: "print-doc__note" },

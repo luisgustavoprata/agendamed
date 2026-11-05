@@ -4,6 +4,7 @@ import sqlite3
 from datetime import date, datetime
 
 from agendamed.db import transaction
+from agendamed.gestao import CLINIC_ID, Gestao, GestaoDb
 from agendamed.errors import ConflictError, NotFoundError
 from agendamed.models import Appointment, AppointmentStatus, Doctor
 from agendamed.repositories import AppointmentRepository, DoctorRepository, PatientRepository
@@ -62,7 +63,9 @@ class AppointmentService:
         appointment = self._get_appointment(appointment_id)
         if appointment.status != AppointmentStatus.SCHEDULED:
             raise ConflictError("Apenas consultas agendadas podem ser canceladas.")
-        self.appointments.update_status(appointment_id, AppointmentStatus.CANCELLED)
+        with transaction(self.conn):
+            self.appointments.update_status(appointment_id, AppointmentStatus.CANCELLED)
+            Gestao(GestaoDb(self.conn), CLINIC_ID).release_appointment_charge(appointment_id)
         return self._get_appointment(appointment_id)
 
     def reopen(self, appointment_id: int) -> Appointment:

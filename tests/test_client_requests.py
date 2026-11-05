@@ -70,6 +70,20 @@ class ClientRequestsTest(APITestCase):
         self.assertEqual(response.json["kind_label"], "Relatório médico")
 
 
+class CancelledChargeTest(ClientRequestsTest):
+    def test_cancelled_appointment_leaves_the_receivables(self):
+        procedure = self.client.post("/procedures", headers=self.headers,
+                                     json={"name": "Consulta", "price_cents": 30000}).json
+        appointment = self.booked("2030-01-10T10:00")
+        charge = self.client.post(f"/appointments/{appointment['id']}/charge",
+                                  headers=self.headers, json={"procedure_id": procedure["id"]})
+        self.assertEqual(charge.status_code, 201, charge.json)
+        self.client.post(f"/appointments/{appointment['id']}/cancel", headers=self.headers)
+        totals = self.client.get("/finance/cashflow?start=2030-01-01&end=2030-01-31",
+                                 headers=self.headers).json["totals"]
+        self.assertEqual(totals["income_open"], 0)
+
+
 class OldDatabaseTest(APITestCase):
     def test_old_prescriptions_table_accepts_reports_after_upgrade(self):
         db_path = self.app.config["DATABASE"]

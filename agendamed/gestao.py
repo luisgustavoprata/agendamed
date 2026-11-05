@@ -635,6 +635,16 @@ class Gestao:
         )
         return self.transaction(tx_id, today)
 
+    def release_appointment_charge(self, appointment_id: int) -> None:
+        """Consulta cancelada: a cobrança em aberto sai do financeiro.
+
+        Se já foi paga, fica (o dinheiro entrou; devolução é um lançamento à parte).
+        """
+        self.db.execute(
+            """DELETE FROM finance_transactions
+               WHERE appointment_id = ? AND clinic_id = ? AND paid_on IS NULL""",
+            (appointment_id, self.clinic_id))
+
     def appointment_charge(self, appointment_id: int, today: str) -> dict | None:
         row = self.db.one(f"{self._TX_SELECT} WHERE t.appointment_id = ? AND t.clinic_id = ?",
                           (appointment_id, self.clinic_id))
