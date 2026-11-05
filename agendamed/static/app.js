@@ -45,6 +45,10 @@ const ICONS = {
   check: '<path d="M5 12.5l4.5 4.5L19 7.5"/>',
   book: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4M12 13v5M9.5 15.5h5"/>',
   shield: '<path d="M12 3l7 3v5c0 4.5-3 8.5-7 10-4-1.5-7-5.5-7-10V6z"/><path d="M9 12l2 2 4-4"/>',
+  phone: '<path d="M5 4h3.5l1.8 4.4-2.2 1.4a11 11 0 0 0 6.1 6.1l1.4-2.2L20 15.5V19a1 1 0 0 1-1 1A16 16 0 0 1 4 5a1 1 0 0 1 1-1z"/>',
+  pin: '<path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0c0 5.4-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.4"/>',
+  eye: '<path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="3"/>',
+  eyeOff: '<path d="M4 4l16 16M10.6 6A9.7 9.7 0 0 1 12 5.5c6 0 9.5 6.5 9.5 6.5a16 16 0 0 1-3 3.7M6.3 7.6A16 16 0 0 0 2.5 12S6 18.5 12 18.5a9 9 0 0 0 4-1M9.9 9.9a3 3 0 0 0 4.2 4.2"/>',
   lock: '<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>',
   money: '<rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/><path d="M6 10v4M18 10v4"/>',
   box: '<path d="M3 7.5L12 3l9 4.5v9L12 21l-9-4.5z"/><path d="M3 7.5l9 4.5 9-4.5M12 12v9"/>',
@@ -572,6 +576,8 @@ function argentumMark() {
    e o AgendaMed aparece só como assinatura. Aqui, uma clínica de exemplo. */
 const CLINIC_BRAND = {
   name: "Clínica Vida", initials: "CV", tagline: "Agenda da equipe",
+  // Linha sob o nome no cabeçalho da entrada (clínica de exemplo).
+  specialties: "Cardiologia · Pediatria · Dermatologia",
   // Saem no cabeçalho das receitas, atestados e pedidos de exame.
   address: "Rua das Palmeiras, 250, Centro, Rio Verde/GO", phone: "(64) 3620-0000",
   // Cor da clínica no sistema todo: botões, aba ativa, consultas na agenda e destaques.
@@ -654,7 +660,11 @@ function renderLogin() {
     });
 
     fill(card,
-      clinicHeader(),
+      h("div", { class: "vida-card-head" },
+        h("h2", { class: "vida-card-head__title" }, isLogin ? "Acesso da equipe" : "Criar conta"),
+        h("p", { class: "vida-card-head__sub" }, isLogin
+          ? "Use o e-mail e a senha que a clínica criou para você."
+          : "Cadastre-se para usar a agenda da clínica.")),
       h("h1", { class: "visually-hidden" }, `Entrar na agenda da ${CLINIC_BRAND.name}`),
       !isLogin && h("p", { class: "login__sub" },
         "Use um e-mail que você acessa. A senha precisa ter ao menos 8 caracteres."),
@@ -668,9 +678,85 @@ function renderLogin() {
   }
 
   draw();
-  fill(root(), h("div", { class: "login login--clinic" },
+  fill(root(), h("div", { class: "login login--clinic login--vida" },
+    h("div", { class: "vida-band", "aria-hidden": "true" }, ecgTrace()),
+    vidaTop(),
+    vidaGreeting(),
     panel,
-    h("footer", { class: "login__signature" }, argentumMark())));
+    h("footer", { class: "login__signature" },
+      argentumMark(),
+      h("p", { class: "vida-legal" }, `© ${new Date().getFullYear()} ${CLINIC_BRAND.name} · clínica de demonstração do AgendaMed`))));
+  enhancePasswords(card);
+}
+
+/** Faixa de cima: a clínica à esquerda, o contato à direita. */
+function vidaTop() {
+  return h("header", { class: "vida-top" },
+    h("div", { class: "vida-top__brand" },
+      h("span", { class: "vida-top__logo", "aria-hidden": "true" }, CLINIC_BRAND.initials),
+      h("div", null,
+        h("p", { class: "vida-top__name" }, CLINIC_BRAND.name),
+        h("p", { class: "vida-top__sub" }, CLINIC_BRAND.specialties))),
+    h("div", { class: "vida-top__contact" },
+      h("span", null, icon("phone"), CLINIC_BRAND.phone),
+      h("span", null, icon("pin"), CLINIC_BRAND.address)));
+}
+
+/** "Bom dia, equipe." com a data de hoje, por cima do cartão. */
+function vidaGreeting() {
+  const now = new Date();
+  const hour = now.getHours();
+  const hello = hour < 12 ? "Bom dia" : hour < 18 ? "Boa tarde" : "Boa noite";
+  const date = new Intl.DateTimeFormat("pt-BR", { weekday: "long", day: "numeric", month: "long" }).format(now);
+  return h("section", { class: "vida-hello" },
+    h("p", { class: "vida-hello__title" }, `${hello}, equipe.`),
+    h("p", { class: "vida-hello__date" }, date.charAt(0).toUpperCase() + date.slice(1)));
+}
+
+/** Traço fino de eletrocardiograma na faixa (aparece da esquerda para a direita). */
+function ecgTrace() {
+  const ns = "http://www.w3.org/2000/svg";
+  const svg = document.createElementNS(ns, "svg");
+  svg.setAttribute("viewBox", "0 0 1440 160");
+  svg.setAttribute("preserveAspectRatio", "none");
+  const path = document.createElementNS(ns, "path");
+  const beat = (x) => `L${x} 96 Q${x + 14} 86 ${x + 28} 96 L${x + 46} 96 L${x + 54} 104 L${x + 66} 30 L${x + 78} 124 L${x + 88} 96 L${x + 112} 96 Q${x + 134} 76 ${x + 156} 96`;
+  path.setAttribute("d", `M0 96 L96 96 ${beat(96)} L1160 96 ${beat(1160)} L1440 96`);
+  svg.append(path);
+  // A linha já nasce visível; a revelação só roda com a página na tela, e some em 3 s de
+  // qualquer jeito (em aba de fundo a animação fica parada).
+  const reveal = document.visibilityState === "visible";
+  const trace = h("div", { class: reveal ? "ecg ecg--reveal" : "ecg" }, svg);
+  if (reveal) setTimeout(() => trace.classList.remove("ecg--reveal"), 3000);
+  return trace;
+}
+
+/** Senha: botão para mostrar/esconder e aviso de Caps Lock ligado. */
+function enhancePasswords(scope) {
+  const apply = () => scope.querySelectorAll('input[type="password"]:not([data-enhanced])').forEach((input) => {
+    input.dataset.enhanced = "1";
+    const wrap = h("div", { class: "pw-field" });
+    input.replaceWith(wrap);
+    const toggle = h("button", { class: "pw-field__toggle", type: "button", "aria-label": "Mostrar senha", title: "Mostrar senha" }, icon("eye"));
+    toggle.addEventListener("click", () => {
+      const show = input.type === "password";
+      input.type = show ? "text" : "password";
+      toggle.setAttribute("aria-label", show ? "Esconder senha" : "Mostrar senha");
+      toggle.title = toggle.getAttribute("aria-label");
+      fill(toggle, icon(show ? "eyeOff" : "eye"));
+      input.focus();
+    });
+    const caps = h("p", { class: "pw-field__caps", hidden: true, "aria-live": "polite" }, "Caps Lock está ligado.");
+    const check = (e) => (caps.hidden = !e.getModifierState?.("CapsLock"));
+    input.addEventListener("keydown", check);
+    input.addEventListener("keyup", check);
+    input.addEventListener("blur", () => (caps.hidden = true));
+    wrap.append(input, toggle);
+    wrap.after(caps);
+  });
+  apply();
+  // O cartão é redesenhado (entrar, criar conta, esqueci a senha): aplica de novo.
+  new MutationObserver(apply).observe(scope, { childList: true, subtree: true });
 }
 
 /* ---------- Agendar (fluxo guiado) ---------- */

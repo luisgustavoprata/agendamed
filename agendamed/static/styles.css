@@ -695,3 +695,67 @@ details.panel[open] summary { margin-bottom: 12px; }
   .guide-grid dt { font-size: 7.5pt; }
   .guide-grid dd { margin: 0; font-size: 11pt; }
 }
+
+/* ---------- Entrada da Clínica Vida: cabeçalho, saudação e detalhes ---------- */
+.login--vida::before, .login--vida::after { display: none; }
+.login--vida { grid-template-rows: auto auto 1fr auto; }
+.vida-band {
+  position: absolute; inset: 0 0 auto; height: max(430px, 54vh); z-index: -1; overflow: hidden;
+  background:
+    radial-gradient(120% 90% at 50% 0%, color-mix(in srgb, var(--clinic) 55%, transparent) 0%, transparent 60%),
+    var(--clinic-ink);
+}
+.vida-band .ecg { position: absolute; left: 0; right: 0; top: 62%; height: 160px; transform: translateY(-50%); }
+.ecg svg { display: block; width: 100%; height: 100%; }
+.ecg path { fill: none; stroke: rgba(255, 255, 255, 0.3); stroke-width: 1.6; stroke-linejoin: round; stroke-linecap: round; vector-effect: non-scaling-stroke; }
+.ecg--reveal::after {
+  content: ""; position: absolute; inset: 0; background: var(--clinic-ink); transform-origin: right center;
+  animation: ecg-reveal 2.6s cubic-bezier(0.22, 1, 0.36, 1) 0.15s forwards;
+}
+@keyframes ecg-reveal { to { transform: scaleX(0); } }
+@media (prefers-reduced-motion: reduce) { .ecg--reveal::after { display: none; } }
+
+.vida-top {
+  width: min(1180px, 100%); margin: 0 auto; padding: 26px clamp(20px, 4vw, 40px) 0;
+  display: flex; justify-content: space-between; align-items: center; gap: 24px; color: #fff;
+}
+.vida-top__brand { display: flex; align-items: center; gap: 14px; }
+.vida-top__logo {
+  display: grid; place-items: center; width: 46px; height: 46px; border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.35); font-family: var(--font-display); font-size: 18px; font-weight: 600;
+}
+.vida-top__name { font-family: var(--font-display); font-size: 21px; font-weight: 600; line-height: 1.15; }
+.vida-top__sub { margin-top: 2px; font-size: 13.5px; color: rgba(255, 255, 255, 0.72); }
+.vida-top__contact { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px 22px; font-size: 13.5px; color: rgba(255, 255, 255, 0.8); }
+.vida-top__contact span { display: inline-flex; align-items: center; gap: 7px; }
+.vida-top__contact svg { width: 16px; height: 16px; opacity: 0.85; }
+
+.vida-hello { text-align: center; color: #fff; padding: clamp(28px, 6vh, 56px) 20px 0; }
+.vida-hello__title { font-family: var(--font-display); font-weight: 500; font-size: clamp(30px, 3.4vw, 44px); line-height: 1.1; letter-spacing: -0.015em; }
+.vida-hello__date { margin-top: 8px; font-size: 15px; color: rgba(255, 255, 255, 0.72); }
+.login--vida .login__center { padding-top: 28px; }
+
+.vida-card-head { display: grid; gap: 6px; padding-bottom: 4px; }
+.vida-card-head__title { font-family: var(--font-display); font-size: 26px; font-weight: 600; line-height: 1.2; }
+.vida-card-head__sub { font-size: 15px; color: var(--ink-soft); }
+.login--vida .login__card--boxed { border: 0; border-radius: 14px; box-shadow: 0 1px 2px rgba(14, 26, 20, 0.06), 0 24px 56px -18px rgba(14, 26, 20, 0.4); }
+
+.pw-field { position: relative; }
+.pw-field .input { padding-right: 48px; }
+.pw-field__toggle {
+  position: absolute; top: 50%; right: 6px; transform: translateY(-50%); display: grid; place-items: center;
+  width: 38px; height: 38px; border: 0; border-radius: var(--radius-m); background: transparent;
+  color: var(--ink-faint); cursor: pointer;
+}
+.pw-field__toggle:hover { color: var(--ink); background: var(--paper); }
+.pw-field__toggle svg { width: 20px; height: 20px; }
+.pw-field__caps { margin: 6px 0 0; font-size: 13px; font-weight: 500; color: var(--brick); }
+
+.login--vida .login__signature { flex-direction: column; align-items: center; gap: 10px; }
+.vida-legal { margin: 0; padding: 0 16px; font-size: 12px; color: var(--ink-faint); text-align: center; }
+
+@media (max-width: 720px) {
+  .vida-top { justify-content: center; }
+  .vida-top__contact { display: none; }
+  .vida-band { height: max(380px, 48vh); }
+}
