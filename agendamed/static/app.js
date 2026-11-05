@@ -271,7 +271,8 @@ const session = {
     const { access_token: token } = await api.post("/auth/login", { email, password });
     api.token = token;
     state.user = await api.get("/auth/me");
-    if (!location.hash) location.hash = "#/agendar";
+    // Depois de entrar, sempre começa em "Agendar consulta".
+    history.replaceState(null, "", `${location.pathname}${location.search}#/agendar`);
     renderShell();
   },
 
@@ -604,6 +605,8 @@ function clinicHeader() {
 }
 
 function renderLogin() {
+  // Na tela de entrada o endereço fica limpo (sem "#/financeiro" de uma visita anterior).
+  if (location.hash) history.replaceState(null, "", `${location.pathname}${location.search}`);
   document.title = `Entrar | ${CLINIC_BRAND.name}`;
   let mode = "login";
 
