@@ -100,7 +100,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .btn--icon { width: 42px; padding: 0; }
 .btn svg { width: 17px; height: 17px; flex: none; }
 
-.field { display: grid; gap: 6px; }
+.field { display: grid; gap: 6px; align-content: start; } /* lado a lado, um campo com dica não estica o vizinho */
 .field__label { font-size: 13.5px; font-weight: 500; color: var(--ink-soft); }
 .field__hint { font-size: 13px; color: var(--ink-faint); }
 .field__error { font-size: 13px; color: var(--brick); min-height: 0; }
