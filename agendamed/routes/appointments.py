@@ -67,3 +67,9 @@ def cancel_appointment(appointment_id: int):
 @bp.post("/<int:appointment_id>/complete")
 def complete_appointment(appointment_id: int):
     return _service().complete(appointment_id).to_dict()
+
+
+@bp.post("/<int:appointment_id>/reopen")
+def reopen_appointment(appointment_id: int):
+    """Desfaz a conclusão (ex.: concluída por engano)."""
+    return _service().reopen(appointment_id).to_dict()

@@ -350,6 +350,9 @@ def _paths() -> dict:
         "/appointments/{appointment_id}/complete": {"post": _op(
             "Conclui uma consulta", "Consultas", ok=200, ok_schema="Appointment",
             params=[appointment_id], errors=(404, 409))},
+        "/appointments/{appointment_id}/reopen": {"post": _op(
+            "Reabre uma consulta concluída", "Consultas", ok=200, ok_schema="Appointment",
+            params=[appointment_id], errors=(404, 409))},
     }
 
 

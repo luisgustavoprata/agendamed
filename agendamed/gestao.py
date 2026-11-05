@@ -40,6 +40,7 @@ PRESCRIPTION_KINDS = {
     "controle_especial": "Receituário de controle especial",
     "atestado": "Atestado médico",
     "exames": "Solicitação de exames",
+    "relatorio": "Relatório médico",
 }
 PAYMENT_METHODS = ("dinheiro", "pix", "cartao_credito", "cartao_debito", "boleto",
                    "transferencia", "convenio")
@@ -72,7 +73,7 @@ class PrescriptionItem(InputSchema):
 
 
 class PrescriptionCreate(InputSchema):
-    kind: Literal["simples", "controle_especial", "atestado", "exames"]
+    kind: Literal["simples", "controle_especial", "atestado", "exames", "relatorio"]
     doctor_id: DbId | None = None
     items: list[PrescriptionItem] = Field(default=[], max_length=30)
     text: str | None = Field(default=None, max_length=5000,

@@ -57,12 +57,26 @@ class AppointmentService:
         return self._get_appointment(appointment_id)
 
     def cancel(self, appointment_id: int) -> Appointment:
+        """Cancela uma consulta agendada, inclusive uma que já passou (ex.: o paciente faltou
+        ou foi marcada por engano): a agenda nunca fica travada."""
         appointment = self._get_appointment(appointment_id)
         if appointment.status != AppointmentStatus.SCHEDULED:
             raise ConflictError("Apenas consultas agendadas podem ser canceladas.")
-        if appointment.start_at <= self.now:
-            raise ConflictError("Não é possível cancelar uma consulta que já começou.")
         self.appointments.update_status(appointment_id, AppointmentStatus.CANCELLED)
+        return self._get_appointment(appointment_id)
+
+    def reopen(self, appointment_id: int) -> Appointment:
+        """Desfaz a conclusão: a consulta volta a ficar agendada e pode ser cancelada."""
+        appointment = self._get_appointment(appointment_id)
+        if appointment.status != AppointmentStatus.COMPLETED:
+            raise ConflictError("Apenas consultas concluídas podem ser reabertas.")
+        with transaction(self.conn, immediate=True):
+            # Se alguém já ocupou o horário, a consulta não pode voltar para ele.
+            if self.appointments.find_overlapping(
+                appointment.start_at, appointment.end_at, doctor_id=appointment.doctor_id
+            ):
+                raise ConflictError("O horário desta consulta já foi ocupado por outra.")
+            self.appointments.update_status(appointment_id, AppointmentStatus.SCHEDULED)
         return self._get_appointment(appointment_id)
 
     def complete(self, appointment_id: int) -> Appointment:

@@ -1260,9 +1260,15 @@ async function renderAgenda(main, isCurrent) {
         onclick: () => act("complete", "Consulta concluída."),
       }, "Concluir consulta"));
     }
-    if (ap.status === "scheduled" && !started) {
+    if (ap.status === "completed") {
+      actions.append(h("button", {
+        class: "btn btn--ghost btn--block", type: "button",
+        onclick: () => act("reopen", "Consulta reaberta."),
+      }, "Reabrir consulta"));
+    }
+    if (ap.status === "scheduled") {
       actions.append(confirmButton("Cancelar consulta", "Confirmar cancelamento",
-        () => act("cancel", "Consulta cancelada. O horário voltou a ficar livre."), "btn--block"));
+        () => act("cancel", started ? "Consulta cancelada." : "Consulta cancelada. O horário voltou a ficar livre."), "btn--block"));
     }
 
     return [
@@ -1397,7 +1403,13 @@ async function renderAppointments(main, isCurrent) {
                   onclick: () => openChargeDialog(ap, () => load()),
                 }, "Faturar"));
               }
-              if (ap.status === "scheduled" && start > now) {
+              if (ap.status === "completed") {
+                buttons.push(h("button", {
+                  class: "btn btn--ghost btn--small", type: "button",
+                  onclick: () => act(ap, "reopen", "Consulta reaberta."),
+                }, "Reabrir"));
+              }
+              if (ap.status === "scheduled") {
                 buttons.push(confirmButton("Cancelar", "Confirmar", () => act(ap, "cancel", "Consulta cancelada."), "btn--small"));
               }
               return buttons;

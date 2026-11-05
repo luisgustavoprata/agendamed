@@ -36,6 +36,7 @@ const RECORD_KIND_OPTIONS = [
 const RX_KIND_OPTIONS = [
   ["simples", "Receituário simples"], ["controle_especial", "Receituário de controle especial"],
   ["atestado", "Atestado médico"], ["exames", "Solicitação de exames"],
+  ["relatorio", "Relatório médico"],
 ];
 const BLOOD_TYPES = ["", "A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
 /* Nesta versão não há perfis: toda a equipe usa todas as telas. */

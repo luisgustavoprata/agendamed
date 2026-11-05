@@ -31,14 +31,14 @@ CREATE TABLE IF NOT EXISTS record_entries (
 );
 CREATE INDEX IF NOT EXISTS idx_record_entries_patient ON record_entries (clinic_id, patient_id, created_at);
 
--- Receitas, atestados, pedidos de exame. `items` guarda a lista de medicamentos em JSON.
+-- Receitas, atestados, pedidos de exame e relatórios. `items` guarda a lista em JSON.
 CREATE TABLE IF NOT EXISTS prescriptions (
     id         INTEGER PRIMARY KEY AUTOINCREMENT,
     clinic_id  INTEGER NOT NULL DEFAULT 1,
     patient_id INTEGER NOT NULL REFERENCES patients (id),
     doctor_id  INTEGER NOT NULL REFERENCES doctors (id),
     kind       TEXT    NOT NULL
-               CHECK (kind IN ('simples', 'controle_especial', 'atestado', 'exames')),
+               CHECK (kind IN ('simples', 'controle_especial', 'atestado', 'exames', 'relatorio')),
     items      TEXT    NOT NULL DEFAULT '[]',
     text       TEXT,
     created_by INTEGER NOT NULL REFERENCES users (id),

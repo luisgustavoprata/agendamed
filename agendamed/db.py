@@ -64,6 +64,32 @@ def _upgrade(conn) -> None:
         if "clinic_id" not in columns:
             conn.execute(f"ALTER TABLE {table} ADD COLUMN clinic_id INTEGER NOT NULL DEFAULT 1")
     conn.executescript(GESTAO_SCHEMA_PATH.read_text(encoding="utf-8"))
+    _allow_medical_report(conn)
+
+
+def _allow_medical_report(conn) -> None:
+    """Bancos antigos: a tabela de prescrições não aceitava o tipo "relatorio".
+
+    O SQLite não altera um CHECK, então a tabela é recriada com os mesmos dados.
+    """
+    row = conn.execute(
+        "SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'prescriptions'"
+    ).fetchone()
+    if row is None or "relatorio" in row["sql"]:
+        return
+    new_sql = row["sql"].replace(
+        "'exames')", "'exames', 'relatorio')"
+    ).replace("CREATE TABLE prescriptions", "CREATE TABLE prescriptions_new", 1)
+    conn.executescript(f"""
+        BEGIN;
+        {new_sql};
+        INSERT INTO prescriptions_new SELECT * FROM prescriptions;
+        DROP TABLE prescriptions;
+        ALTER TABLE prescriptions_new RENAME TO prescriptions;
+        CREATE INDEX IF NOT EXISTS idx_prescriptions_patient
+            ON prescriptions (clinic_id, patient_id, created_at);
+        COMMIT;
+    """)
 
 
 @click.command("init-db")
