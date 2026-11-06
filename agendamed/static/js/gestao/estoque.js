@@ -5,6 +5,7 @@
  */
 "use strict";
 
+/** Janela de entrada (direction > 0) ou saída (direction < 0) de um item. */
 function openStockMoveDialog(item, direction, onSaved) {
   openDialog(
     `${direction > 0 ? "Entrada" : "Saída"} — ${item.name}`,
@@ -55,6 +56,7 @@ function openStockMoveDialog(item, direction, onSaved) {
   );
 }
 
+/** Janela com o histórico de entradas e saídas de um item. */
 async function openStockHistory(item) {
   const data = await safe(() => api.get(`/stock/items/${item.id}/movements`));
   if (!data) return;
@@ -89,6 +91,7 @@ async function openStockHistory(item) {
   );
 }
 
+/** Janela de novo item de estoque ou de edição de um item (`item`). */
 function openStockItemDialog(onSaved, item = null) {
   openDialog(item ? "Editar item" : "Novo item de estoque", (close) => {
     const form = h(
@@ -147,6 +150,7 @@ function openStockItemDialog(onSaved, item = null) {
   });
 }
 
+/** Tela Estoque: itens, aviso de estoque baixo, entradas, saídas e histórico. */
 async function renderStock(main, isCurrent) {
   const listArea = h("div", null, loading());
   fill(
@@ -168,6 +172,7 @@ async function renderStock(main, isCurrent) {
     listArea,
   );
 
+  /** Busca os itens e desenha o aviso de estoque baixo e a tabela. */
   async function load() {
     const data = await safe(() => api.get("/stock/items"));
     if (!data || !isCurrent()) return;

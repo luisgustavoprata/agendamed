@@ -5,6 +5,7 @@
  */
 "use strict";
 
+/** Tela Pacientes: busca por nome ou CPF, cadastro, edição e prontuário. */
 async function renderPatients(main, isCurrent) {
   const f = state.patientsPage;
   const search = field({
@@ -50,6 +51,7 @@ async function renderPatients(main, isCurrent) {
     listArea,
   );
 
+  /** Busca a página de pacientes com o texto da busca. */
   async function load() {
     try {
       const page = await api.get("/patients", {

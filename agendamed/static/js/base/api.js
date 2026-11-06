@@ -8,6 +8,10 @@
  */
 "use strict";
 
+/**
+ * Erro devolvido pela API: o status HTTP, a mensagem e, quando houver, os erros de cada
+ * campo (`errors`).
+ */
 class ApiError extends Error {
   constructor(status, message, errors = []) {
     super(message);
@@ -16,9 +20,16 @@ class ApiError extends Error {
   }
 }
 
+/** Nome com que o token de acesso fica guardado no navegador (localStorage). */
 const TOKEN_KEY = "agendamed.token";
 
+/**
+ * Cliente da API. Uso: await api.get("/patients", {q: "ana"}),
+ * api.post("/appointments", dados), api.del("/doctors/3")...
+ * Erros viram ApiError; um 401 com sessão aberta encerra a sessão (session.expire).
+ */
 const api = {
+  /** Token de acesso guardado no navegador (null se não houver ou se bloqueado). */
   get token() {
     try {
       return localStorage.getItem(TOKEN_KEY);
@@ -35,6 +46,10 @@ const api = {
     }
   },
 
+  /**
+   * Faz a chamada HTTP: envia o token, manda o corpo como JSON e devolve o JSON da
+   * resposta. Respostas de erro viram ApiError.
+   */
   async request(method, path, body) {
     const headers = { Accept: "application/json" };
     if (body !== undefined) headers["Content-Type"] = "application/json";
@@ -68,6 +83,7 @@ const api = {
     return data ?? {}; // 204 (ex.: excluir) não tem corpo
   },
 
+  /** GET com parâmetros na query string (os vazios são ignorados). */
   get(path, params) {
     const query = new URLSearchParams();
     for (const [key, value] of Object.entries(params || {})) {
@@ -78,18 +94,22 @@ const api = {
     return this.request("GET", qs ? `${path}?${qs}` : path);
   },
 
+  /** POST com corpo JSON. */
   post(path, body = {}) {
     return this.request("POST", path, body);
   },
 
+  /** PUT com corpo JSON. */
   put(path, body = {}) {
     return this.request("PUT", path, body);
   },
 
+  /** PATCH com corpo JSON (só os campos que mudam). */
   patch(path, body = {}) {
     return this.request("PATCH", path, body);
   },
 
+  /** DELETE. */
   del(path) {
     return this.request("DELETE", path);
   },

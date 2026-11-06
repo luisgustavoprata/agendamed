@@ -7,12 +7,17 @@
  */
 "use strict";
 
+/** Formato dos botões de dia: "seg., 07/01". */
 const chipDateFmt = new Intl.DateTimeFormat("pt-BR", {
   weekday: "short",
   day: "2-digit",
   month: "2-digit",
 });
 
+/**
+ * Tela Agendar (a tela inicial). Passos: 1) médico, 2) dia e horário, 3) paciente; ao
+ * lado, o resumo com o botão de confirmar. `b` guarda as escolhas feitas até agora.
+ */
 async function renderBooking(main, isCurrent) {
   fill(main, loading());
   let doctors;
@@ -58,6 +63,7 @@ async function renderBooking(main, isCurrent) {
     ),
   );
 
+  /** Cabeçalho de um passo: número, título e dica. */
   function stepHead(number, id, title, hint) {
     return h(
       "header",
@@ -136,6 +142,7 @@ async function renderBooking(main, isCurrent) {
 
   /* Etapa 2: dia e horário */
   let daysSeq = 0;
+  /** Escolhe o médico e carrega os próximos dias úteis com horário. */
   async function chooseDoctor(doctor) {
     b.doctor = doctor;
     b.slot = null;
@@ -182,6 +189,7 @@ async function renderBooking(main, isCurrent) {
     }
   }
 
+  /** Desenha a faixa de dias e os horários livres do dia escolhido. */
   function drawTimes() {
     const current = b.days.find((d) => d.iso === b.date);
     const strip = h(
@@ -265,6 +273,7 @@ async function renderBooking(main, isCurrent) {
 
   /* Etapa 3: paciente */
   let patientsReady = false;
+  /** Libera o passo do paciente (na primeira vez que um horário é escolhido). */
   function unlockPatients() {
     if (patientsReady) return;
     patientsReady = true;
@@ -290,6 +299,7 @@ async function renderBooking(main, isCurrent) {
     });
     notes.addEventListener("input", () => (b.notes = notes.value.trim()));
 
+    /** Mostra os pacientes encontrados na busca, para escolher um. */
     function drawResults(patients) {
       if (patients.length === 0) {
         fill(
@@ -331,6 +341,7 @@ async function renderBooking(main, isCurrent) {
       );
     }
 
+    /** Busca pacientes pelo nome ou CPF (até 8 resultados). */
     async function loadPatients(q = "") {
       try {
         const page = await api.get("/patients", { q, limit: 8 });
@@ -402,6 +413,7 @@ async function renderBooking(main, isCurrent) {
     );
   }
 
+  /** Atualiza o resumo ao lado e o botão de confirmar. */
   function drawSummary() {
     const start = b.slot ? parseLocal(b.slot) : null;
     const end = start
@@ -472,6 +484,7 @@ async function renderBooking(main, isCurrent) {
     );
   }
 
+  /** Mostra a consulta marcada e as opções do que fazer depois. */
   function drawSuccess(ap) {
     const start = parseLocal(ap.start_at);
     const end = parseLocal(ap.end_at);

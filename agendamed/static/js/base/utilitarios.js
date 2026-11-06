@@ -11,6 +11,12 @@
  */
 "use strict";
 
+/**
+ * Cria um elemento da página: h("tag", {atributos}, ...filhos).
+ * Atributos começados com "on" viram eventos (onclick: função); true vira atributo
+ * vazio; null, undefined e false são ignorados. Os filhos podem ser elementos ou textos
+ * (o texto nunca é interpretado como HTML).
+ */
 function h(tag, props, ...children) {
   const el = document.createElement(tag);
   for (const [key, value] of Object.entries(props || {})) {
@@ -28,6 +34,7 @@ function h(tag, props, ...children) {
   return el;
 }
 
+/** Desenhos dos ícones (traços SVG), usados por icon(nome). */
 const ICONS = {
   calendar:
     '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>',
@@ -59,6 +66,7 @@ const ICONS = {
   chart: '<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>',
 };
 
+/** Ícone SVG pelo nome (veja ICONS). É decorativo: leitores de tela o ignoram. */
 function icon(name) {
   const wrap = document.createElement("span");
   wrap.setAttribute("aria-hidden", "true");
@@ -77,8 +85,13 @@ function fill(el, ...children) {
   );
 }
 
+/** O elemento <div id="root"> onde as telas são desenhadas. */
 const root = () => document.getElementById("root");
 
+/**
+ * Atrasa a chamada de `fn` até a pessoa parar de digitar por `wait` milissegundos
+ * (evita uma busca no servidor a cada tecla).
+ */
 function debounce(fn, wait = 250) {
   let timer;
   return (...args) => {
@@ -97,17 +110,23 @@ function initials(name) {
   return (parts[0][0] + last).toUpperCase();
 }
 
+/** Número com a palavra no singular ou no plural: plural(2, "dia", "dias"). */
 function plural(n, one, many) {
   return `${n} ${n === 1 ? one : many}`;
 }
 
+/** Número com dois dígitos: 7 → "07". */
 const pad = (n) => String(n).padStart(2, "0");
+/** Data no formato da API: "AAAA-MM-DD". */
 const toISODate = (d) =>
   `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+/** Data e hora no formato da API, sem fuso: "AAAA-MM-DDTHH:MM". */
 const toLocalISO = (d) =>
   `${toISODate(d)}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+/** Hora de uma data: "09:30". */
 const fmtTime = (d) => `${pad(d.getHours())}:${pad(d.getMinutes())}`;
 
+/** Converte "AAAA-MM-DD" em Date (meia-noite, no horário local). */
 function parseISODate(value) {
   const [y, m, d] = value.split("-").map(Number);
   return new Date(y, m - 1, d);
@@ -122,26 +141,33 @@ function parseLocal(value) {
   return date;
 }
 
+/** Nova data `days` dias depois (ou antes, se negativo) de `date`. */
 function addDays(date, days) {
   const copy = new Date(date);
   copy.setDate(copy.getDate() + days);
   return copy;
 }
 
+/** Formato de data por extenso: "segunda-feira, 7 de janeiro". */
 const longDateFmt = new Intl.DateTimeFormat("pt-BR", {
   weekday: "long",
   day: "numeric",
   month: "long",
 });
+/** Formato de data curta: "07/01/2030". */
 const shortDateFmt = new Intl.DateTimeFormat("pt-BR", {
   day: "2-digit",
   month: "2-digit",
   year: "numeric",
 });
+/** Primeira letra em maiúscula. */
 const capitalize = (text) => text.charAt(0).toUpperCase() + text.slice(1);
+/** Data por extenso com maiúscula: "Segunda-feira, 7 de janeiro". */
 const fmtLongDate = (d) => capitalize(longDateFmt.format(d));
+/** Data curta: "07/01/2030". */
 const fmtShortDate = (d) => shortDateFmt.format(d);
 
+/** Idade em anos completos a partir da data de nascimento ("AAAA-MM-DD"). */
 function ageFrom(isoDate) {
   const birth = parseISODate(isoDate);
   const today = new Date();
@@ -154,6 +180,7 @@ function ageFrom(isoDate) {
   return age;
 }
 
+/** Põe a máscara do CPF enquanto a pessoa digita: 000.000.000-00. */
 function maskCpf(value) {
   const d = value.replace(/\D/g, "").slice(0, 11);
   return d
@@ -162,6 +189,7 @@ function maskCpf(value) {
     .replace(/\.(\d{3})(\d{1,2})$/, ".$1-$2");
 }
 
+/** Põe a máscara do telefone enquanto a pessoa digita: (00) 00000-0000. */
 function maskPhone(value) {
   const d = value.replace(/\D/g, "").slice(0, 11);
   if (d.length === 0) return "";
@@ -172,12 +200,14 @@ function maskPhone(value) {
   return `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`;
 }
 
+/** Nome em português de cada situação da consulta. */
 const STATUS_LABELS = {
   scheduled: "Agendada",
   completed: "Concluída",
   cancelled: "Cancelada",
 };
 
+/** Selo colorido com a situação da consulta (agendada, concluída...). */
 function statusBadge(status) {
   return h(
     "span",

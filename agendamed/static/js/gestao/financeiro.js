@@ -7,6 +7,7 @@
  */
 "use strict";
 
+/** Selo da situação do lançamento: recebido/pago, em aberto ou vencido. */
 function txStatusBadge(tx) {
   const map = {
     paid: ["completed", tx.kind === "income" ? "Recebido" : "Pago"],
@@ -17,6 +18,7 @@ function txStatusBadge(tx) {
   return h("span", { class: `badge badge--${tone}` }, label);
 }
 
+/** Janela de nova receita ou nova despesa. */
 function openTransactionDialog(onSaved, accounts, kind = "income") {
   openDialog(kind === "income" ? "Nova receita" : "Nova despesa", (close) => {
     const form = h(
@@ -142,6 +144,7 @@ function openTransactionDialog(onSaved, accounts, kind = "income") {
   });
 }
 
+/** Janela de registrar o pagamento de um lançamento (data, conta e forma). */
 function openPayDialog(tx, accounts, onSaved) {
   openDialog(
     tx.kind === "income" ? "Registrar recebimento" : "Registrar pagamento",
@@ -206,6 +209,7 @@ function openPayDialog(tx, accounts, onSaved) {
   );
 }
 
+/** Janela simples com um campo de nome (ex.: criar uma conta). */
 function openNameDialog(title, label, onSubmit) {
   openDialog(title, (close) => {
     const form = h(
@@ -227,6 +231,10 @@ function openNameDialog(title, label, onSubmit) {
   });
 }
 
+/**
+ * Tela Financeiro, com abas: Fluxo de caixa, Lançamentos, Repasse e Guias de convênio.
+ * A aba e o mês escolhidos ficam em state.finance.
+ */
 async function renderFinance(main, isCurrent) {
   const f = (state.finance ??= {
     tab: "fluxo",
@@ -242,6 +250,7 @@ async function renderFinance(main, isCurrent) {
     ["guias", "Guias de convênio"],
   ];
   const head = h("div");
+  /** Desenha as abas e o seletor de mês. */
   const drawHead = () =>
     fill(
       head,
@@ -270,6 +279,7 @@ async function renderFinance(main, isCurrent) {
     content,
   );
 
+  /** Carrega a aba escolhida no mês escolhido. */
   async function load() {
     fill(content, loading());
     const period = monthRange(f.month);
@@ -282,6 +292,7 @@ async function renderFinance(main, isCurrent) {
     await views[f.tab](period);
   }
 
+  /** Aba Fluxo de caixa: totais, movimento por dia, categorias e contas. */
   async function drawCashflow(period) {
     const flow = await safe(() => api.get("/finance/cashflow", period));
     if (!flow || !isCurrent()) return;
@@ -448,6 +459,7 @@ async function renderFinance(main, isCurrent) {
     );
   }
 
+  /** Aba Lançamentos: receitas e despesas com as ações de cada um. */
   async function drawTransactions(period) {
     const data = await safe(() =>
       Promise.all([
@@ -513,6 +525,7 @@ async function renderFinance(main, isCurrent) {
       f.status = v.status;
       load();
     });
+    /** Executa uma ação num lançamento e recarrega a aba. */
     const act = async (fn, message) => {
       if ((await safe(fn)) !== null) {
         toast(message);
@@ -610,6 +623,7 @@ async function renderFinance(main, isCurrent) {
     );
   }
 
+  /** Aba Repasse: regras por médico e o repasse do mês. */
   async function drawPayouts(period) {
     const data = await safe(() =>
       Promise.all([
@@ -768,6 +782,7 @@ async function renderFinance(main, isCurrent) {
     );
   }
 
+  /** Aba Guias de convênio: escolhe o convênio e imprime as guias. */
   async function drawGuides(period) {
     const plans = await safe(() => api.get("/health-plans"));
     if (!plans || !isCurrent()) return;

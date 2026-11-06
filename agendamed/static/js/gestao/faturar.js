@@ -5,6 +5,10 @@
  */
 "use strict";
 
+/**
+ * Janela de faturar uma consulta: procedimento, particular ou convênio, valor e, se já
+ * recebeu, a forma de pagamento. Se a consulta já foi faturada, mostra a cobrança.
+ */
 async function openChargeDialog(ap, onDone) {
   const data = await safe(() =>
     Promise.all([

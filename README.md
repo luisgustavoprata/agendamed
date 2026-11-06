@@ -81,24 +81,38 @@ Os horários são tratados como **intervalos semiabertos** `[início, fim)`: uma
 
 ```
 agendamed/
-├── __init__.py          # application factory (create_app)
+├── __init__.py          # application factory (create_app) e o mapa de todo o pacote
 ├── config.py            # configuração via variáveis de ambiente
-├── db.py                # conexão SQLite, transações e comandos CLI
-├── schema.sql           # tabelas, restrições e índices
+├── db.py                # conexão SQLite, transações e ajustes de bancos antigos
+├── cli.py               # comandos de terminal (flask init-db, flask seed)
+├── schema.sql           # tabelas, restrições e índices da agenda
+├── schema_gestao.sql    # tabelas da gestão (prontuário, financeiro, estoque...)
 ├── models.py            # entidades de domínio (dataclasses imutáveis)
 ├── schemas.py           # validação de entrada com Pydantic
-├── repositories.py      # acesso a dados (todo o SQL fica aqui)
+├── repositories/        # acesso a dados (todo o SQL), um arquivo por entidade
+├── gestao/              # prontuário, prescrições, financeiro, repasse, estoque, relatórios
 ├── security.py          # hash de senha PBKDF2 e tokens JWT
 ├── errors.py            # erros de domínio → respostas HTTP
 ├── openapi.py           # especificação OpenAPI gerada a partir dos esquemas Pydantic
 ├── ratelimit.py         # limite de tentativas de login (janela deslizante)
-├── seed.py              # dados de demonstração
+├── accounts.py          # acessos da equipe pelas variáveis de ambiente
+├── seed.py              # dados de demonstração (seed_gestao.py: os da gestão)
 ├── services/
 │   ├── scheduling.py    # regras de agenda puras (sem banco, sem relógio)
 │   └── appointments.py  # casos de uso: agendar, cancelar, concluir, disponibilidade
 ├── routes/              # blueprints HTTP (auth, doctors, patients, appointments, docs)
-└── static/              # interface web: index.html, styles.css e app.js
+│   └── gestao/          # rotas da gestão, um arquivo por assunto
+└── static/
+    ├── index.html       # carrega os scripts de js/ NA ORDEM e, por último, app.js
+    ├── app.js           # menu, troca de telas e inicialização
+    ├── js/base/         # utilitários, dias úteis, marca, API, sessão e componentes
+    ├── js/dialogos/     # janelas de cadastro
+    ├── js/telas/        # uma tela por arquivo (agenda, consultas, pacientes...)
+    ├── js/gestao/       # telas e janelas da gestão
+    └── styles.css       # estilos (o topo do arquivo tem o sumário)
 ```
+
+Cada pasta e cada arquivo começa com um comentário dizendo o que faz.
 
 O fluxo de uma requisição é **rota → serviço → repositório → banco**. Cada camada tem uma
 responsabilidade só, o que torna o código fácil de testar e de evoluir (por exemplo, trocar
@@ -125,6 +139,25 @@ o SQLite por PostgreSQL mexe apenas nos repositórios).
   sempre calculado no fuso da clínica (`CLINIC_TIMEZONE`, padrão `America/Sao_Paulo`).
 - **Integridade no banco também.** `UNIQUE`, `CHECK` e chaves estrangeiras garantem os dados
   mesmo que alguém escreva direto no banco, e os índices cobrem as consultas de agenda.
+
+### Para acrescentar...
+
+- **uma rota:** escreva a função no arquivo do assunto em `agendamed/routes/` (um arquivo novo
+  precisa ter o blueprint registrado em `create_app`). Valide o corpo com um esquema de
+  `schemas.py`, deixe o SQL num repositório e descreva a rota em `openapi.py` (um teste
+  confere se toda rota está documentada).
+- **uma coluna ou tabela:** acrescente em `schema.sql` (ou `schema_gestao.sql`) para os bancos
+  novos e, em `db.py` (`_upgrade`), o `ALTER TABLE` que ajusta os bancos que já existem.
+- **uma tela:** crie a função `render...` num arquivo de `static/js/telas/`, inclua o arquivo
+  no `index.html` (antes do `app.js`) e acrescente a tela na lista `ROUTES` do `app.js`.
+
+**Formatação e conferência** (rode antes de cada commit):
+
+```bash
+ruff format agendamed tests loadtest                              # formata o Python
+npx prettier@3.9.10 --write "agendamed/static/**/*.{js,css}"      # formata JS e CSS
+ruff check . && pytest                                            # estilo e testes
+```
 
 ## 🚀 Como rodar
 

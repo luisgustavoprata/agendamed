@@ -5,6 +5,10 @@
  */
 "use strict";
 
+/**
+ * Tela Consultas: lista com filtros por data, médico e situação, e as ações de cada
+ * consulta. Os filtros ficam em state.appointments.
+ */
 async function renderAppointments(main, isCurrent) {
   const f = state.appointments;
   fill(main, loading());
@@ -80,6 +84,7 @@ async function renderAppointments(main, isCurrent) {
     listArea,
   );
 
+  /** Busca a página de consultas com os filtros atuais. */
   async function load() {
     try {
       const page = await api.get("/appointments", {
@@ -96,6 +101,7 @@ async function renderAppointments(main, isCurrent) {
     }
   }
 
+  /** Desenha a tabela de consultas e a paginação. */
   function draw(page) {
     const now = new Date();
     fill(
@@ -204,6 +210,7 @@ async function renderAppointments(main, isCurrent) {
     );
   }
 
+  /** Executa uma ação na consulta (concluir, reabrir...) e recarrega. */
   async function act(ap, action, message) {
     try {
       await api.post(`/appointments/${ap.id}/${action}`);

@@ -5,6 +5,10 @@
  */
 "use strict";
 
+/**
+ * Janela de cadastro de médico: nome, especialidade, CRM, duração da consulta e horário
+ * de atendimento. `onCreated` é chamado com o médico criado.
+ */
 function openDoctorDialog(onCreated) {
   openDialog("Cadastrar médico", (close) => {
     const form = h(

@@ -8,6 +8,7 @@
  */
 "use strict";
 
+/** Contador para criar ids únicos (ligam rótulos, dicas e erros aos campos). */
 let fieldSeq = 0;
 
 /** Campo de formulário com rótulo, dica e área de erro ligados por acessibilidade. */
@@ -61,6 +62,7 @@ function field({
   );
 }
 
+/** Apaga as mensagens de erro de um formulário. */
 function clearFormErrors(form) {
   form
     .querySelectorAll("[data-error-for]")
@@ -95,6 +97,7 @@ function showFormErrors(form, err) {
   (firstInvalid || general)?.focus?.();
 }
 
+/** Valores de um formulário num objeto {nome: valor}, sem espaços nas pontas. */
 function formValues(form) {
   const values = {};
   for (const [key, value] of new FormData(form))
@@ -102,6 +105,7 @@ function formValues(form) {
   return values;
 }
 
+/** Cabeçalho de tela: título, subtítulo e botões de ação à direita. */
 function pageHead(title, subtitle, ...actions) {
   return h(
     "header",
@@ -116,10 +120,15 @@ function pageHead(title, subtitle, ...actions) {
   );
 }
 
+/** Texto "Carregando…" enquanto os dados chegam. */
 function loading(text = "Carregando…") {
   return h("p", { class: "loading", role: "status" }, text);
 }
 
+/**
+ * Tabela de dados. `columns` diz o título de cada coluna e como desenhar a célula a
+ * partir de cada linha de `rows`; `empty` é o texto para quando não há linhas.
+ */
 function dataTable({ caption, columns, rows, empty }) {
   const table = h(
     "table",
@@ -159,6 +168,7 @@ function dataTable({ caption, columns, rows, empty }) {
   return h("div", { class: "table-wrap" }, table);
 }
 
+/** Paginação "Anterior / Próxima" de uma lista; onChange recebe o novo offset. */
 function pager(page, onChange) {
   if (page.total === 0) return null;
   const from = page.offset + 1;
@@ -194,6 +204,10 @@ function pager(page, onChange) {
   );
 }
 
+/**
+ * Abre uma janela (diálogo) com título. `buildBody(close)` monta o conteúdo e recebe a
+ * função que fecha a janela. Devolve essa mesma função.
+ */
 function openDialog(title, buildBody) {
   const titleId = `dlg-${++fieldSeq}`;
   const dialog = h("dialog", { class: "dialog", "aria-labelledby": titleId });

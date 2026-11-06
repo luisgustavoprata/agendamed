@@ -1,9 +1,21 @@
-/* AgendaMed — interface web
+/* AgendaMed (Clínica Vida) — estilos da interface.
    Tipografia: Source Serif 4 nos títulos e IBM Plex Sans no restante, hospedadas no
    próprio site (sem Google Fonts: nenhum dado do visitante sai para terceiros).
    Visual institucional e sóbrio: papel claro, tinta azul-marinho, linhas finas e uma
    única cor de destaque. A peça central é a régua da agenda, como uma folha de agenda.
-   A marca Argentum usa a Space Grotesk, também hospedada aqui. */
+   A marca Argentum usa a Space Grotesk, também hospedada aqui.
+
+   Sumário, na ordem do arquivo:
+     Fontes · Cores e medidas · Base · Botões e campos · Login · Estrutura do app ·
+     Agenda · Tabelas · Diálogo · Avisos · Login de demonstração · Agendar ·
+     Responsivo (celular) · Gestão · Entrada da Clínica Vida · Esqueci minha senha
+
+   A ORDEM DAS REGRAS IMPORTA: quando duas regras de mesmo peso valem para o mesmo
+   elemento, vence a que vem depois. Acrescente regras novas no fim da seção certa e não
+   troque seções de lugar. Cores e medidas ficam em variáveis (--navy, --line...) no
+   :root: mude lá para valer no sistema inteiro. */
+
+/* ---------- Fontes (arquivos .woff2 em static/fonts/) ---------- */
 
 @font-face {
   font-family: "Plex Sans";
@@ -48,7 +60,10 @@
   font-display: swap;
 }
 
+/* ---------- Cores e medidas (variáveis usadas em todo o arquivo) ---------- */
+
 :root {
+  /* Papel (fundo), superfícies, tinta (texto) e linhas. */
   --paper: #f5f4f0;
   --surface: #ffffff;
   --ink: #142231;
@@ -64,6 +79,7 @@
   --navy-line: #c3d2e2;
   --navy-ink: #0e2a47;
 
+  /* Cores de apoio (alerta, sucesso, neutro) e os fundos claros de cada uma (-wash). */
   --brick: #9a3324;
   --brick-wash: #f8ebe7;
   --sage: #3f6b57;
@@ -72,6 +88,7 @@
   --slate-wash: #eceef0;
   --sand-wash: #f6f0e2;
 
+  /* Fontes, cantos arredondados, altura de cada linha da régua da agenda e sombra. */
   --font: "Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
   --font-display: "Source Serif", Georgia, "Times New Roman", serif;
   --radius-s: 4px;
@@ -81,6 +98,8 @@
   --shadow-pop:
     0 1px 2px rgba(20, 34, 49, 0.06), 0 12px 32px rgba(20, 34, 49, 0.14);
 }
+
+/* ---------- Base: o que vale para a página toda ---------- */
 
 *,
 *::before,
@@ -142,6 +161,7 @@ textarea {
 
 /* ---------- Botões e campos ---------- */
 
+/* Botões: .btn e as variações --primary, --ghost, --small, --icon... */
 .btn {
   display: inline-flex;
   align-items: center;
@@ -209,6 +229,7 @@ textarea {
   flex: none;
 }
 
+/* Campo de formulário: rótulo, dica e mensagem de erro (veja field() no JS). */
 .field {
   display: grid;
   gap: 6px;
@@ -232,6 +253,7 @@ textarea {
   display: none;
 }
 
+/* Caixas de texto, listas de escolha e áreas de texto. */
 .input {
   width: 100%;
   min-height: 42px;
@@ -265,6 +287,7 @@ select.input {
   padding-right: 32px;
 }
 
+/* Formulários: espaçamento, campos lado a lado e botões do rodapé. */
 .form {
   display: grid;
   gap: 18px;
@@ -294,6 +317,7 @@ select.input {
 
 /* ---------- Login ---------- */
 
+/* Tela de entrada: faixa de cima, cartão central e rodapé. */
 .login {
   min-height: 100vh;
   display: grid;
@@ -434,6 +458,7 @@ select.input {
   font-size: 15px;
 }
 
+/* Abas do cartão de entrada (Entrar / Cadastrar clínica). */
 .tabs {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -467,6 +492,7 @@ select.input {
 .demo-note strong {
   color: var(--ink);
 }
+/* Botão com cara de link (ex.: "Esqueci minha senha"). */
 .link-btn {
   padding: 0;
   border: 0;
@@ -658,12 +684,14 @@ select.input {
 
 /* ---------- Estrutura do app ---------- */
 
+/* Moldura: barra lateral à esquerda e área principal à direita. */
 .shell {
   min-height: 100vh;
   display: grid;
   grid-template-columns: 252px minmax(0, 1fr);
 }
 
+/* Barra lateral: marca, cartão da clínica, menu e o usuário logado. */
 .sidebar {
   position: sticky;
   top: 0;
@@ -691,6 +719,7 @@ select.input {
   height: 28px;
 }
 
+/* Menu das telas (o item da tela aberta fica destacado). */
 .nav {
   display: grid;
   gap: 2px;
@@ -785,6 +814,7 @@ select.input {
   white-space: nowrap;
 }
 
+/* Área principal e cabeçalho de cada tela (título, subtítulo e botões). */
 .main {
   padding: 36px clamp(20px, 3.2vw, 48px) 64px;
   min-width: 0;
@@ -816,6 +846,7 @@ select.input {
   max-width: 62ch;
 }
 
+/* Barra de filtros acima das listas. */
 .toolbar {
   display: flex;
   gap: 10px;
@@ -831,6 +862,7 @@ select.input {
 
 /* ---------- Agenda ---------- */
 
+/* Tela Agenda: régua de horários à esquerda e painel à direita. */
 .agenda {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 360px;
@@ -838,6 +870,7 @@ select.input {
   align-items: start;
 }
 
+/* Barra do dia: data, navegação e resumo de horários livres e ocupados. */
 .daybar {
   display: flex;
   align-items: center;
@@ -868,6 +901,7 @@ select.input {
   width: auto;
 }
 
+/* Régua: uma linha (.slot) por horário, livre, ocupado ou já passado. */
 .ruler {
   position: relative;
   background: var(--surface);
@@ -1021,6 +1055,7 @@ select.input {
   font-variant-numeric: tabular-nums;
 }
 
+/* Aviso de agenda vazia (nenhum médico cadastrado). */
 .agenda-empty {
   padding: 56px 24px;
   text-align: center;
@@ -1068,6 +1103,7 @@ select.input {
   margin-top: 10px;
 }
 
+/* Dados da consulta escolhida, no painel. */
 .details {
   display: grid;
   gap: 0;
@@ -1090,6 +1126,7 @@ select.input {
   margin: 0;
 }
 
+/* Busca e escolha de paciente (painel da agenda e tela Agendar). */
 .picker {
   display: grid;
   gap: 6px;
@@ -1130,6 +1167,7 @@ select.input {
 
 /* ---------- Tabelas ---------- */
 
+/* Tabelas de dados, com rolagem lateral em telas estreitas. */
 .table-wrap {
   background: var(--surface);
   border: 1px solid var(--line);
@@ -1190,6 +1228,7 @@ select.input {
   color: var(--ink-soft);
 }
 
+/* Paginação abaixo das tabelas. */
 .pager {
   display: flex;
   align-items: center;
@@ -1300,6 +1339,7 @@ select.input {
   }
 }
 
+/* Texto "Carregando…" enquanto os dados chegam. */
 .loading {
   padding: 48px;
   text-align: center;
@@ -1369,6 +1409,7 @@ select.input {
 
 /* ---------- Agendar (fluxo guiado) ---------- */
 
+/* Tela Agendar: os passos à esquerda e o resumo à direita. */
 .booking {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 340px;
@@ -1381,6 +1422,7 @@ select.input {
   min-width: 0;
 }
 
+/* Cada passo do agendamento; .step--locked = ainda bloqueado. */
 .step {
   display: grid;
   gap: 18px;
@@ -1433,6 +1475,7 @@ select.input {
   color: var(--ink-soft);
 }
 
+/* Cartões de escolha do médico. */
 .choice-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
@@ -1474,6 +1517,7 @@ select.input {
   color: var(--ink-faint);
 }
 
+/* Faixa de dias: cada botão mostra o dia e quantos horários livres tem. */
 .day-strip {
   display: flex;
   gap: 8px;
@@ -1517,6 +1561,7 @@ select.input {
   color: var(--ink-faint);
 }
 
+/* Grade dos horários livres do dia. */
 .time-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(82px, 1fr));
@@ -1546,6 +1591,7 @@ select.input {
   max-height: 300px;
 }
 .step,
+/* Resumo ao lado, com o botão de confirmar. */
 .summary,
 .panel {
   scroll-margin-top: 24px;
@@ -1564,6 +1610,7 @@ select.input {
   text-align: center;
 }
 
+/* Confirmação depois de marcar. */
 .success {
   display: grid;
   gap: 6px;
@@ -1741,6 +1788,7 @@ select.input {
 
 /* ---------- Gestão: prontuário, financeiro, estoque e painel ---------- */
 
+/* Abas internas das telas de gestão (ex.: Fluxo de caixa / Lançamentos). */
 .subtabs {
   display: flex;
   flex-wrap: wrap;
@@ -1771,6 +1819,7 @@ select.input {
   outline-offset: -2px;
 }
 
+/* Números de destaque (stat() no JS); .pos e .neg colorem ganho e perda. */
 .stats {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
@@ -1801,6 +1850,7 @@ select.input {
   color: var(--brick);
 }
 
+/* Barras do movimento por dia, no fluxo de caixa. */
 .bar {
   display: inline-block;
   vertical-align: middle;
@@ -1821,6 +1871,7 @@ select.input {
   white-space: nowrap;
 }
 
+/* Lista de pares "rótulo: valor". */
 .kv {
   list-style: none;
   margin: 0;
@@ -1846,6 +1897,7 @@ select.input {
   gap: 12px;
 }
 
+/* Caixa de alerta (ex.: itens com estoque baixo). */
 .alert-box {
   margin: 12px 0;
   padding: 12px 14px;
@@ -1861,6 +1913,7 @@ select.input {
   font-size: 13px;
 }
 
+/* Prontuário: registros em forma de linha do tempo. */
 .record {
   display: grid;
   gap: 16px;
@@ -1889,6 +1942,7 @@ select.input {
   white-space: pre-wrap;
 }
 
+/* Itens da receita no formulário (remédio, quantidade e como usar). */
 .rx-items {
   display: grid;
   gap: 10px;

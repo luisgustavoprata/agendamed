@@ -21,6 +21,7 @@ function printDocument(doc) {
   setTimeout(() => window.print(), 50);
 }
 
+/** Imprime um documento do prontuário (receita, atestado, exames...). */
 function printPrescription(rx) {
   const kindTitle = rx.kind_label.toUpperCase();
   const doc = h(
@@ -84,6 +85,7 @@ function printPrescription(rx) {
   printDocument(doc);
 }
 
+/** Imprime as guias de consulta de um convênio, uma por página. */
 function printTissBatch(batch) {
   const row = (label, value) =>
     h(

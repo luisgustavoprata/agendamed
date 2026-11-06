@@ -7,6 +7,13 @@
  */
 "use strict";
 
+/**
+ * Tela Agenda: o dia de um médico como uma régua de horários.
+ * Partes: o cabeçalho (médico, dia e navegação), a régua (loadDay/drawDay/slotRow) e o
+ * painel ao lado (drawPanel), que muda conforme o horário escolhido: livre
+ * (bookingPanel, para marcar) ou ocupado (detailsPanel, com as ações da consulta).
+ * O estado (médico, dia e horário escolhidos) fica em state.agenda.
+ */
 async function renderAgenda(main, isCurrent) {
   fill(main, loading());
   let doctors;
@@ -56,6 +63,7 @@ async function renderAgenda(main, isCurrent) {
   const a = state.agenda;
   if (!doctors.some((d) => d.id === a.doctorId)) a.doctorId = doctors[0].id;
   if (!a.date) a.date = toISODate(nextWorkingDay(new Date(), true));
+  /** O médico escolhido na agenda. */
   const doctor = () => doctors.find((d) => d.id === a.doctorId);
 
   const doctorField = field({
@@ -147,6 +155,7 @@ async function renderAgenda(main, isCurrent) {
   let day = null;
   let daySeq = 0;
 
+  /** Vai para outro dia e recarrega a régua. */
   function goTo(iso) {
     a.date = iso;
     a.selectedKey = null;
@@ -154,6 +163,9 @@ async function renderAgenda(main, isCurrent) {
     loadDay();
   }
 
+  /**
+   * Carrega o dia: horários livres e consultas do médico, e monta as linhas da régua.
+   */
   async function loadDay() {
     const seq = ++daySeq;
     const current = doctor();
@@ -196,6 +208,7 @@ async function renderAgenda(main, isCurrent) {
     }
   }
 
+  /** Desenha a régua do dia e o resumo (quantos livres e ocupados). */
   function drawDay() {
     const dateObj = parseISODate(a.date);
     const booked = day.slots.filter(
@@ -236,6 +249,7 @@ async function renderAgenda(main, isCurrent) {
     drawPanel();
   }
 
+  /** Uma linha da régua: o horário e o que há nele (livre ou consulta). */
   function slotRow(slot) {
     const isSelected = slot.key === a.selectedKey;
     const select = () => {
@@ -307,6 +321,7 @@ async function renderAgenda(main, isCurrent) {
     return row;
   }
 
+  /** Linha da hora atual, quando o dia mostrado é hoje. */
   function drawNowLine(dateObj) {
     const now = new Date();
     if (toISODate(now) !== toISODate(dateObj)) return;
@@ -333,6 +348,7 @@ async function renderAgenda(main, isCurrent) {
     });
   }
 
+  /** Desenha o painel ao lado conforme o horário escolhido. */
   function drawPanel() {
     const slot = day?.slots.find((s) => s.key === a.selectedKey);
     if (!slot || slot.kind === "past") {
@@ -362,6 +378,7 @@ async function renderAgenda(main, isCurrent) {
     }
   }
 
+  /** Painel de um horário livre: buscar o paciente e marcar. */
   function bookingPanel(slot) {
     const d = doctor();
     const end = new Date(slot.time.getTime() + d.slot_minutes * 60000);
@@ -533,6 +550,7 @@ async function renderAgenda(main, isCurrent) {
     ];
   }
 
+  /** Painel de uma consulta: dados do paciente e as ações da consulta. */
   function detailsPanel(ap) {
     const start = parseLocal(ap.start_at);
     const end = parseLocal(ap.end_at);
@@ -631,6 +649,10 @@ async function renderAgenda(main, isCurrent) {
   loadDay();
 }
 
+/**
+ * Monta as linhas da régua do dia: um horário a cada `slot_minutes` dentro do
+ * expediente, marcado como livre, ocupado (com a consulta), concluído ou passado.
+ */
 function buildSlots(doctor, isoDate, freeKeys, appointments) {
   const [sh, sm] = doctor.work_start.split(":").map(Number);
   const [eh, em] = doctor.work_end.split(":").map(Number);

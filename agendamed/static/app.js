@@ -14,6 +14,12 @@
  */
 "use strict";
 
+/**
+ * As telas do menu, na ordem em que aparecem: endereço (path), nome (label), ícone e a
+ * função que desenha a tela.
+ * Para criar uma tela nova: escreva a função render... num arquivo de js/telas/, inclua
+ * o arquivo no index.html e acrescente a tela aqui.
+ */
 const ROUTES = [
   { path: "agendar", label: "Agendar", icon: "book", render: renderBooking },
   { path: "agenda", label: "Agenda", icon: "calendar", render: renderAgenda },
@@ -40,9 +46,15 @@ const ROUTES = [
   { path: "gestao", label: "Gestão", icon: "chart", render: renderManagement },
 ];
 
+/**
+ * Contador de trocas de tela. Uma tela que demorou a carregar confere isCurrent() antes
+ * de desenhar, para não aparecer por cima da tela nova.
+ */
 let renderSeq = 0;
+/** A área principal (<main>), onde cada tela é desenhada. */
 let mainEl = null;
 
+/** Desenha a moldura do sistema: a barra lateral com o menu e a área principal. */
 function renderShell() {
   const nav = h(
     "nav",
@@ -121,6 +133,10 @@ function renderShell() {
   navigate({ focus: false });
 }
 
+/**
+ * Abre a tela do endereço atual (#/agenda, #/pacientes...). Endereço desconhecido abre
+ * a primeira tela do menu.
+ */
 function navigate({ focus = true } = {}) {
   if (!state.user || !mainEl) return;
   const path = location.hash.replace(/^#\/?/, "") || "agendar";
@@ -141,6 +157,11 @@ function navigate({ focus = true } = {}) {
   window.scrollTo(0, 0);
 }
 
+/**
+ * Início: trocar o endereço depois do # (links do menu, voltar do navegador) troca a
+ * tela; as cores da clínica são aplicadas; e a sessão é restaurada (ou aparece a tela
+ * de entrada).
+ */
 window.addEventListener("hashchange", () => navigate());
 applyClinicTheme(CLINIC_BRAND.colors);
 session.start();

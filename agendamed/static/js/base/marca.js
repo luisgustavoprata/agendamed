@@ -41,6 +41,9 @@ function applyClinicTheme(colors) {
     ?.setAttribute("content", colors.ink);
 }
 
+/**
+ * Bloco com a marca da clínica (iniciais e nome). Hoje nenhuma tela usa esta função.
+ */
 function clinicHeader() {
   return h(
     "div",

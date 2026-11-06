@@ -7,8 +7,13 @@
  */
 "use strict";
 
+/** É sábado ou domingo? (a clínica não atende no fim de semana) */
 const isWeekend = (date) => date.getDay() === 0 || date.getDay() === 6;
 
+/**
+ * O próximo dia útil depois de `from` (com `includeFrom`, a própria data vale, se for
+ * dia útil).
+ */
 function nextWorkingDay(from, includeFrom) {
   let day = includeFrom ? new Date(from) : addDays(from, 1);
   while (isWeekend(day)) day = addDays(day, 1);

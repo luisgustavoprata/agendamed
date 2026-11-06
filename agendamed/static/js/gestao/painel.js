@@ -5,6 +5,7 @@
  */
 "use strict";
 
+/** Janela de novo (ou editar) procedimento ou convênio. */
 function openCatalogDialog(kind, onSaved, item = null) {
   const isProc = kind === "procedure";
   openDialog(
@@ -103,10 +104,15 @@ function openCatalogDialog(kind, onSaved, item = null) {
   );
 }
 
+/**
+ * Tela Gestão, com abas: Painel (números do mês), Procedimentos e Convênios. A aba e o
+ * mês escolhidos ficam em state.management.
+ */
 async function renderManagement(main, isCurrent) {
   const f = (state.management ??= { tab: "painel", month: currentMonth() });
   const head = h("div");
   const content = h("div", null, loading());
+  /** Desenha as abas e o seletor de mês. */
   const drawHead = () =>
     fill(
       head,
@@ -144,12 +150,14 @@ async function renderManagement(main, isCurrent) {
     content,
   );
 
+  /** Carrega a aba escolhida. */
   async function load() {
     fill(content, loading());
     if (f.tab === "painel") return drawPanel();
     return drawCatalog(f.tab === "procedimentos" ? "procedure" : "plan");
   }
 
+  /** Aba Painel: consultas, faltas, pacientes novos, faturamento e estoque baixo. */
   async function drawPanel() {
     const r = await safe(() =>
       api.get("/reports/overview", monthRange(f.month)),
@@ -252,6 +260,7 @@ async function renderManagement(main, isCurrent) {
     );
   }
 
+  /** Aba Procedimentos ou Convênios: a lista e o botão de novo. */
   async function drawCatalog(kind) {
     const isProc = kind === "procedure";
     const data = await safe(() =>

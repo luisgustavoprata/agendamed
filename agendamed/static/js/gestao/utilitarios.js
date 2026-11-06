@@ -8,10 +8,12 @@
  */
 "use strict";
 
+/** Formato de dinheiro em reais: "R$ 1.234,56". */
 const moneyFmt = new Intl.NumberFormat("pt-BR", {
   style: "currency",
   currency: "BRL",
 });
+/** Centavos (como vêm da API) em reais: 123456 → "R$ 1.234,56". */
 const fmtMoney = (cents) => moneyFmt.format((cents || 0) / 100);
 
 /** "1.234,56", "1234.56" ou "300" → centavos. Devolve null se não for um valor válido. */
@@ -23,13 +25,17 @@ function parseMoney(text) {
   return Number.isFinite(value) && value >= 0 ? Math.round(value * 100) : null;
 }
 
+/** Centavos para o campo de valor: 123456 → "1234,56" (vazio se zero). */
 const centsToInput = (cents) =>
   cents ? (cents / 100).toFixed(2).replace(".", ",") : "";
+/** Data curta a partir de "AAAA-MM-DD..." (ou "—" se não houver). */
 const fmtDate = (iso) =>
   iso ? fmtShortDate(parseISODate(iso.slice(0, 10))) : "—";
+/** Data e hora curtas a partir de "AAAA-MM-DDTHH:MM" (ou "—"). */
 const fmtDateTime = (iso) =>
   iso ? `${fmtDate(iso)} ${iso.slice(11, 16)}` : "—";
 
+/** Nome em português de cada forma de pagamento. */
 const PAYMENT_LABELS = {
   dinheiro: "Dinheiro",
   pix: "Pix",
@@ -39,6 +45,7 @@ const PAYMENT_LABELS = {
   transferencia: "Transferência",
   convenio: "Convênio",
 };
+/** Tipos de registro do prontuário, para o campo de escolha. */
 const RECORD_KIND_OPTIONS = [
   ["evolucao", "Evolução"],
   ["anamnese", "Anamnese"],
@@ -48,6 +55,7 @@ const RECORD_KIND_OPTIONS = [
   ["exame", "Resultado de exame"],
   ["anotacao", "Anotação"],
 ];
+/** Tipos de documento (receitas, atestado, exames, relatório). */
 const RX_KIND_OPTIONS = [
   ["simples", "Receituário simples"],
   ["controle_especial", "Receituário de controle especial"],
@@ -55,10 +63,13 @@ const RX_KIND_OPTIONS = [
   ["exames", "Solicitação de exames"],
   ["relatorio", "Relatório médico"],
 ];
+/** Tipos sanguíneos para a ficha clínica (o vazio = não informado). */
 const BLOOD_TYPES = ["", "A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
 /* Nesta versão não há perfis: toda a equipe usa todas as telas. */
 const isOwner = () => true;
+/** Nesta versão não há perfil de médico: sempre falso. */
 const isDoctorUser = () => false;
+/** Nome da clínica (vem de CLINIC_BRAND), usado nos documentos impressos. */
 const clinicName = () => CLINIC_BRAND.name;
 
 /** Mês escolhido (AAAA-MM) → início e fim, no formato da API. */
@@ -69,8 +80,10 @@ function monthRange(month) {
     end: toISODate(new Date(y, m, 0)),
   };
 }
+/** O mês atual no formato "AAAA-MM". */
 const currentMonth = () => toISODate(new Date()).slice(0, 7);
 
+/** Campo de escolha do mês; onChange recebe o mês escolhido ("AAAA-MM"). */
 function monthPicker(value, onChange) {
   const wrap = field({ label: "Mês", name: "month", type: "month", value });
   wrap
@@ -103,6 +116,7 @@ function subTabs(tabs, active, onPick) {
   );
 }
 
+/** Número de destaque com rótulo (ex.: "Recebido no mês"). */
 function stat(label, value, tone = "") {
   return h(
     "div",
@@ -122,6 +136,10 @@ function bar(value, max, tone = "") {
   });
 }
 
+/**
+ * Executa uma chamada à API e devolve o resultado; se der erro, mostra o aviso e
+ * devolve null (quem chama só precisa conferir se veio null).
+ */
 async function safe(fn) {
   try {
     return await fn();
@@ -131,6 +149,10 @@ async function safe(fn) {
   }
 }
 
+/**
+ * Envio padrão de formulário: desliga o botão, chama `request`, mostra os erros nos
+ * campos (se houver) e chama `onOk` com o resultado quando dá certo.
+ */
 async function submitForm(form, request, onOk) {
   const submit = form.querySelector('[type="submit"]');
   if (submit) submit.disabled = true;
@@ -145,6 +167,7 @@ async function submitForm(form, request, onOk) {
   }
 }
 
+/** Botões do rodapé de uma janela: Cancelar e o botão principal. */
 function formActions(close, label) {
   return h(
     "div",

@@ -5,6 +5,7 @@
  */
 "use strict";
 
+/** Tela Médicos: lista, cadastro, agenda de cada um e remoção. */
 async function renderDoctors(main, isCurrent) {
   const f = state.doctorsPage;
   const search = field({
@@ -50,6 +51,7 @@ async function renderDoctors(main, isCurrent) {
     listArea,
   );
 
+  /** Busca a página de médicos com o filtro de especialidade. */
   async function load() {
     try {
       const page = await api.get("/doctors", {

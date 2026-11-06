@@ -7,6 +7,9 @@
  */
 "use strict";
 
+/**
+ * Janela do prontuário do paciente, com abas: Registros, Ficha clínica e Prescrições.
+ */
 async function openRecordDialog(patient) {
   const doctors = isOwner() ? await safe(() => getDoctors()) : [];
   if (doctors === null) return;
@@ -17,6 +20,7 @@ async function openRecordDialog(patient) {
     (close) => {
       const body = h("div", { class: "record" }, loading());
       const tabs = h("div");
+      /** Desenha as abas do prontuário. */
       const drawTabs = () =>
         fill(
           tabs,
@@ -36,6 +40,7 @@ async function openRecordDialog(patient) {
         );
       drawTabs();
 
+      /** Campo para escolher o médico responsável pelo registro. */
       const doctorPicker = () =>
         isOwner() &&
         doctors.length > 0 &&
@@ -47,6 +52,7 @@ async function openRecordDialog(patient) {
           options: [["", "Escolha"], ...doctors.map((d) => [d.id, d.name])],
         });
 
+      /** Carrega a aba atual (registros e ficha, ou prescrições). */
       async function load() {
         fill(body, loading());
         if (tab === "prescricoes") {
@@ -64,6 +70,7 @@ async function openRecordDialog(patient) {
         else drawEntries(record);
       }
 
+      /** Aba Registros: o formulário de novo registro e a lista. */
       function drawEntries(record) {
         const s = record.summary;
         const form = h(
@@ -156,6 +163,7 @@ async function openRecordDialog(patient) {
         );
       }
 
+      /** Aba Ficha clínica: alergias, doenças, remédios e tipo sanguíneo. */
       function drawSummary(s) {
         const form = h(
           "form",
@@ -227,8 +235,10 @@ async function openRecordDialog(patient) {
         fill(body, form);
       }
 
+      /** Aba Prescrições: o formulário de novo documento e a lista. */
       function drawPrescriptions(items) {
         const itemsBox = h("div", { class: "rx-items" });
+        /** Acrescenta uma linha de item (remédio ou exame) à receita. */
         const addItem = () =>
           itemsBox.append(
             h(

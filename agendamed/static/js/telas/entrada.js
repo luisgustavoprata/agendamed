@@ -8,7 +8,7 @@
  */
 "use strict";
 
-/** Marca da Argentum Software (versão clara) no canto da área verde do login. */
+/** Assinatura da Argentum Software (quem fez o sistema), no rodapé da entrada. */
 function argentumMark() {
   const svg = (tag, attrs) => {
     const node = document.createElementNS("http://www.w3.org/2000/svg", tag);
@@ -46,6 +46,10 @@ function argentumMark() {
   );
 }
 
+/**
+ * Tela de entrada da Clínica Vida: abas Entrar / Criar conta (a segunda só se o
+ * cadastro estiver aberto) e a ajuda de "Esqueci minha senha".
+ */
 function renderLogin() {
   // Na tela de entrada o endereço fica limpo (sem "#/financeiro" de uma visita anterior).
   if (location.hash)
@@ -151,6 +155,7 @@ function renderLogin() {
     );
   }
 
+  /** Desenha o cartão no modo atual: entrar ou criar conta. */
   function draw() {
     if (mode === "forgot") return drawForgot();
     const isLogin = mode === "login";
@@ -279,6 +284,7 @@ function renderLogin() {
     );
   }
 
+  /** Troca o modo do cartão (login, cadastro ou senha) e redesenha. */
   function switchTo(next) {
     mode = next;
     draw();
@@ -361,13 +367,15 @@ function vidaGreeting() {
   );
 }
 
-/** Traço fino de eletrocardiograma na faixa (aparece da esquerda para a direita). */
+/** Traço fino de eletrocardiograma que atravessa a faixa da entrada (desenha-se uma vez). */
 function ecgTrace() {
   const ns = "http://www.w3.org/2000/svg";
   const svg = document.createElementNS(ns, "svg");
   svg.setAttribute("viewBox", "0 0 1440 160");
   svg.setAttribute("preserveAspectRatio", "none");
+
   const path = document.createElementNS(ns, "path");
+  // Linha de base com dois batimentos (onda P, complexo QRS e onda T), em coordenadas fixas.
   const beat = (x) =>
     `L${x} 96 Q${x + 14} 86 ${x + 28} 96 L${x + 46} 96 L${x + 54} 104 L${x + 66} 30 L${x + 78} 124 L${x + 88} 96 L${x + 112} 96 Q${x + 134} 76 ${x + 156} 96`;
   path.setAttribute(
@@ -375,10 +383,13 @@ function ecgTrace() {
     `M0 96 L96 96 ${beat(96)} L1160 96 ${beat(1160)} L1440 96`,
   );
   svg.append(path);
-  // A linha já nasce visível; a revelação só roda com a página na tela, e some em 3 s de
-  // qualquer jeito (em aba de fundo a animação fica parada).
+  // O recorte que revela o traço fica numa caixa por fora: no próprio <svg> o Chromium
+  // às vezes não pinta a linha.
+  // A linha já nasce visível; a revelação só roda com a página na tela (em aba de fundo a
+  // animação fica parada e a linha sumiria).
   const reveal = document.visibilityState === "visible";
   const trace = h("div", { class: reveal ? "ecg ecg--reveal" : "ecg" }, svg);
+  // Garantia: passado o tempo da animação, a cortina sai de qualquer jeito.
   if (reveal) setTimeout(() => trace.classList.remove("ecg--reveal"), 3000);
   return trace;
 }

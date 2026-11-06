@@ -8,6 +8,10 @@
  */
 "use strict";
 
+/**
+ * Estado da tela que precisa durar entre uma tela e outra: quem está logado, a lista de
+ * médicos (cache) e os filtros de cada tela.
+ */
 const state = {
   user: null,
   doctors: null, // cache da lista de médicos
@@ -17,9 +21,15 @@ const state = {
   patientsPage: { q: "", offset: 0 },
 };
 
+/** Itens por página nas listas (consultas, médicos, pacientes). */
 const PAGE_SIZE = 20;
 
+/** Entrar, sair e restaurar a sessão de quem usa o sistema. */
 const session = {
+  /**
+   * Ao abrir a página: com token guardado, carrega a pessoa e abre o sistema; sem token
+   * (ou com token vencido), mostra a tela de entrada.
+   */
   async start() {
     if (!api.token) return renderLogin();
     try {
@@ -31,6 +41,7 @@ const session = {
     }
   },
 
+  /** Faz login, guarda o token e abre o sistema na tela Agendar. */
   async login(email, password) {
     const { access_token: token } = await api.post("/auth/login", {
       email,
@@ -47,6 +58,7 @@ const session = {
     renderShell();
   },
 
+  /** Sai: apaga o token e os dados em memória e volta à tela de entrada. */
   logout() {
     api.token = null;
     state.user = null;
@@ -54,6 +66,7 @@ const session = {
     renderLogin();
   },
 
+  /** Sessão vencida: sai e avisa a pessoa para entrar de novo. */
   expire() {
     if (!state.user) return;
     this.logout();
@@ -61,6 +74,7 @@ const session = {
   },
 };
 
+/** Aviso rápido no canto da tela, que some sozinho (tone: "success" ou "error"). */
 function toast(message, tone = "success") {
   const el = h(
     "div",
@@ -77,11 +91,16 @@ function toast(message, tone = "success") {
   }, 4200);
 }
 
+/** Mostra o erro de uma chamada à API como aviso (o 401 já tem aviso próprio). */
 function handleError(err) {
   if (err.status === 401) return; // a sessão já foi encerrada com aviso próprio
   toast(err.message, "error");
 }
 
+/**
+ * Lista de médicos, guardada em state.doctors depois da primeira busca (force = true
+ * busca de novo).
+ */
 async function getDoctors(force = false) {
   if (!state.doctors || force) {
     const page = await api.get("/doctors", { limit: 100 });
