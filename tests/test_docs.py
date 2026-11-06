@@ -1,3 +1,5 @@
+"""Documentação da API (OpenAPI): toda rota aparece e todas as referências existem."""
+
 import re
 
 from tests.base import APITestCase
@@ -11,6 +13,8 @@ def to_openapi_path(rule: str) -> str:
 
 
 class OpenApiTest(APITestCase):
+    """Confere a especificação /openapi.json e a página /docs."""
+
     def setUp(self):
         super().setUp()
         self.spec = self.client.get("/openapi.json").json

@@ -41,6 +41,7 @@ METHODS = ("pix", "cartao_credito", "dinheiro", "cartao_debito")
 
 
 def _past_working_days(today: date, count: int) -> list[date]:
+    """Os `count` dias úteis anteriores a `today`, do mais antigo ao mais novo."""
     days, day = [], today - timedelta(days=1)
     while len(days) < count:
         if day.weekday() < 5:
@@ -56,6 +57,9 @@ def seed_management(
     user_id: int,
     now: datetime,
 ) -> None:
+    """Cria os dados de exemplo da gestão: procedimentos, convênios, contas, consultas passadas
+    faturadas, despesas, estoque e o prontuário de uma paciente.
+    """
     g = Gestao(GestaoDb(conn), CLINIC_ID)
     today = now.date()
     today_s, now_s = today.isoformat(), now.replace(microsecond=0).isoformat()

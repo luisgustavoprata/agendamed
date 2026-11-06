@@ -15,6 +15,7 @@ from agendamed.routes.gestao._comum import (
 
 @bp.get("/patients/<int:patient_id>/prescriptions")
 def list_prescriptions(patient_id: int):
+    """GET /patients/<id>/prescriptions — os documentos do paciente."""
     _auth(*CLINICAL)
     g = _g()
     g.require_patient(patient_id)
@@ -23,6 +24,7 @@ def list_prescriptions(patient_id: int):
 
 @bp.post("/patients/<int:patient_id>/prescriptions")
 def add_prescription(patient_id: int):
+    """POST /patients/<id>/prescriptions — cria um documento para o paciente."""
     _auth(*CLINICAL)
     g = _g()
     g.require_patient(patient_id)
@@ -33,5 +35,6 @@ def add_prescription(patient_id: int):
 
 @bp.get("/prescriptions/<int:prescription_id>")
 def get_prescription(prescription_id: int):
+    """GET /prescriptions/<id> — um documento."""
     _auth(*CLINICAL)
     return _g().prescription(prescription_id)

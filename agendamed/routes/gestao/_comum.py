@@ -20,18 +20,22 @@ CLINICAL = FINANCE = OWNER = ()
 
 
 def current_user():
+    """O usuário logado nesta requisição (guardado por require_auth)."""
     return g.user
 
 
 def _g() -> Gestao:
+    """Acesso aos dados de gestão da clínica (CLINIC_ID), com a conexão da requisição."""
     return Gestao(GestaoDb(get_db()), CLINIC_ID)
 
 
 def _today() -> str:
+    """A data de hoje no horário da clínica ("AAAA-MM-DD")."""
     return now().date().isoformat()
 
 
 def _now() -> str:
+    """A data e hora de agora no horário da clínica, no formato do banco."""
     return now().replace(microsecond=0).isoformat(timespec="seconds")
 
 
@@ -50,6 +54,9 @@ def _period() -> tuple[date, date]:
 
 
 def _auth(*_roles) -> None:
+    """Exige login. Os perfis recebidos são ignorados: nesta versão toda a equipe usa todas as
+    telas.
+    """
     require_auth()
 
 

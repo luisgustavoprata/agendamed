@@ -15,6 +15,7 @@ from agendamed.routes.gestao._comum import (
 
 @bp.get("/patients/<int:patient_id>/record")
 def get_record(patient_id: int):
+    """GET /patients/<id>/record — o prontuário: dados do paciente, ficha clínica e registros."""
     _auth(*CLINICAL)
     g = _g()
     patient = g.require_patient(patient_id)
@@ -27,6 +28,7 @@ def get_record(patient_id: int):
 
 @bp.put("/patients/<int:patient_id>/record/summary")
 def save_summary(patient_id: int):
+    """PUT /patients/<id>/record/summary — grava a ficha clínica."""
     _auth(*CLINICAL)
     g = _g()
     g.require_patient(patient_id)
@@ -36,6 +38,7 @@ def save_summary(patient_id: int):
 
 @bp.post("/patients/<int:patient_id>/record/entries")
 def add_entry(patient_id: int):
+    """POST /patients/<id>/record/entries — acrescenta um registro ao prontuário."""
     _auth(*CLINICAL)
     g = _g()
     g.require_patient(patient_id)

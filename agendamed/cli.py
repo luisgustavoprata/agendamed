@@ -27,5 +27,6 @@ def seed_command() -> None:
 
 
 def init_app(app: Flask) -> None:
+    """Registra os comandos de terminal acima no Flask (`flask <comando>`)."""
     app.cli.add_command(init_db_command)
     app.cli.add_command(seed_command)

@@ -13,7 +13,10 @@ from agendamed.services.scheduling import free_slots, validate_booking
 
 
 class AppointmentService:
+    """Operações sobre as consultas da clínica (marcar, cancelar...)."""
+
     def __init__(self, conn: sqlite3.Connection, now: datetime):
+        """Prepara os repositórios e guarda o horário de agora."""
         self.conn = conn
         self.now = now
         self.doctors = DoctorRepository(conn)
@@ -21,18 +24,23 @@ class AppointmentService:
         self.appointments = AppointmentRepository(conn)
 
     def _get_doctor(self, doctor_id: int) -> Doctor:
+        """O médico pelo id; se não existir, erro 404."""
         doctor = self.doctors.get(doctor_id)
         if doctor is None:
             raise NotFoundError("Médico não encontrado.")
         return doctor
 
     def _get_appointment(self, appointment_id: int) -> Appointment:
+        """A consulta pelo id; se não existir, erro 404."""
         appointment = self.appointments.get(appointment_id)
         if appointment is None:
             raise NotFoundError("Consulta não encontrada.")
         return appointment
 
     def book(self, data: AppointmentCreate) -> Appointment:
+        """Marca uma consulta depois de conferir o médico, o paciente, o horário (expediente e
+        grade) e, numa transação reservada para escrita, se ambos estão livres.
+        """
         doctor = self._get_doctor(data.doctor_id)
         if self.patients.get(data.patient_id) is None:
             raise NotFoundError("Paciente não encontrado.")
@@ -83,6 +91,7 @@ class AppointmentService:
         return self._get_appointment(appointment_id)
 
     def complete(self, appointment_id: int) -> Appointment:
+        """Marca a consulta como concluída (atendida). Só depois que o horário começou."""
         appointment = self._get_appointment(appointment_id)
         if appointment.status != AppointmentStatus.SCHEDULED:
             raise ConflictError("Apenas consultas agendadas podem ser concluídas.")
@@ -92,6 +101,7 @@ class AppointmentService:
         return self._get_appointment(appointment_id)
 
     def availability(self, doctor_id: int, day: date) -> list[datetime]:
+        """Horários livres do médico no dia."""
         doctor = self._get_doctor(doctor_id)
         busy = self.appointments.busy_intervals(doctor.id, day)
         return free_slots(doctor, day, busy, self.now)

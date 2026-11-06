@@ -1,3 +1,9 @@
+"""Rotas de acesso: criar conta, login e dados de quem está logado.
+
+Proteções contra quem tenta adivinhar senhas: limite de tentativas por IP e e-mail, e a mesma
+mensagem e o mesmo tempo de resposta para e-mail que não existe.
+"""
+
 from flask import Blueprint, current_app, g, request
 
 from agendamed.db import get_db
@@ -11,10 +17,12 @@ bp = Blueprint("auth", __name__, url_prefix="/auth")
 
 
 def _limiter():
+    """O limitador de tentativas de login por IP + e-mail."""
     return current_app.extensions["login_limiter"]
 
 
 def _ip_limiter():
+    """O limitador de tentativas de login só por IP (todos os e-mails somados)."""
     return current_app.extensions["login_ip_limiter"]
 
 
@@ -28,6 +36,7 @@ def _dummy_hash() -> str:
 
 
 def _too_many(wait: int) -> TooManyRequestsError:
+    """Erro 429 com o tempo de espera, em minutos e no cabeçalho Retry-After."""
     minutes = max(1, round(wait / 60))
     return TooManyRequestsError(
         f"Muitas tentativas de login. Tente novamente em cerca de {minutes} min.",
@@ -37,6 +46,7 @@ def _too_many(wait: int) -> TooManyRequestsError:
 
 @bp.post("/register")
 def register():
+    """POST /auth/register — cria uma conta de acesso (se o cadastro estiver aberto)."""
     if not current_app.config["ALLOW_SIGNUP"]:
         raise ForbiddenError("O cadastro de novas contas está fechado.")
     data = parse_body(UserCreate)
@@ -47,6 +57,10 @@ def register():
 
 @bp.post("/login")
 def login():
+    """POST /auth/login — confere e-mail e senha e devolve o token de acesso.
+
+    Bloqueia temporariamente depois de muitas tentativas erradas (erro 429).
+    """
     data = parse_body(LoginRequest)
 
     # A chave combina IP e e-mail: um atacante não consegue bloquear a conta de outra
@@ -76,5 +90,6 @@ def login():
 
 @bp.get("/me")
 def me():
+    """GET /auth/me — dados de quem está logado."""
     require_auth()
     return g.user.to_dict()

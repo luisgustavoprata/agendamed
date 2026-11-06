@@ -12,7 +12,14 @@ NOW = datetime(2030, 1, 7, 9, 0)
 
 
 class APITestCase(unittest.TestCase):
+    """Base dos testes que chamam a API como a interface faria (cliente HTTP do Flask).
+
+    Cada teste tem um banco próprio e o relógio parado em NOW (troque `self.now` para mudar a hora
+    "de agora").
+    """
+
     def setUp(self) -> None:
+        """Antes de cada teste: banco novo, relógio em NOW e uma aplicação nova."""
         fd, db_path = tempfile.mkstemp(suffix=".db")
         os.close(fd)
         self.addCleanup(os.remove, db_path)
@@ -32,12 +39,14 @@ class APITestCase(unittest.TestCase):
     # --- helpers -----------------------------------------------------------
 
     def register(self, email="recepcao@clinica.com", password="senha-forte-123"):
+        """Cria uma conta de acesso (POST /auth/register)."""
         return self.client.post(
             "/auth/register",
             json={"email": email, "full_name": "Recepção Clínica", "password": password},
         )
 
     def auth_headers(self) -> dict:
+        """Cria a conta da recepção, faz login e devolve o cabeçalho Authorization."""
         self.register()
         response = self.client.post(
             "/auth/login", json={"email": "recepcao@clinica.com", "password": "senha-forte-123"}
@@ -45,6 +54,7 @@ class APITestCase(unittest.TestCase):
         return {"Authorization": f"Bearer {response.json['access_token']}"}
 
     def create_doctor(self, headers, **overrides) -> dict:
+        """Cadastra um médico (por padrão, a Dra. Helena Prado) e devolve o JSON dele."""
         payload = {
             "name": "Dra. Helena Prado",
             "specialty": "Cardiologia",
@@ -56,6 +66,7 @@ class APITestCase(unittest.TestCase):
         return response.json
 
     def create_patient(self, headers, **overrides) -> dict:
+        """Cadastra um paciente (por padrão, Ana Souza) e devolve o JSON dele."""
         payload = {
             "name": "Ana Souza",
             "cpf": "529.982.247-25",
@@ -68,6 +79,7 @@ class APITestCase(unittest.TestCase):
         return response.json
 
     def book(self, headers, doctor_id, patient_id, start_at, **extra):
+        """Marca uma consulta (POST /appointments) e devolve a resposta."""
         return self.client.post(
             "/appointments",
             json={"doctor_id": doctor_id, "patient_id": patient_id, "start_at": start_at, **extra},

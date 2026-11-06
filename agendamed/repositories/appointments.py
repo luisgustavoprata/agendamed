@@ -7,6 +7,8 @@ from agendamed.repositories.base import Page, Repository
 
 
 class AppointmentRepository(Repository):
+    """SQL das consultas. `_SELECT` junta os nomes do médico e do paciente, usados nas telas."""
+
     _SELECT = """
         SELECT a.*, d.name AS doctor_name, p.name AS patient_name
         FROM appointments a
@@ -23,6 +25,9 @@ class AppointmentRepository(Repository):
         end_at: datetime,
         notes: str | None,
     ) -> int:
+        """Grava uma consulta nova e devolve o id. Não confere conflitos: isso é feito antes, no
+        serviço (AppointmentService.book).
+        """
         return self._insert(
             """INSERT INTO appointments (doctor_id, patient_id, start_at, end_at, notes)
                VALUES (?, ?, ?, ?, ?)""",
@@ -31,6 +36,7 @@ class AppointmentRepository(Repository):
         )
 
     def get(self, appointment_id: int) -> Appointment | None:
+        """A consulta pelo id, com os nomes; ou None."""
         row = self.conn.execute(f"{self._SELECT} WHERE a.id = ?", (appointment_id,)).fetchone()
         return Appointment.from_row(row) if row else None
 
@@ -59,6 +65,7 @@ class AppointmentRepository(Repository):
         return Appointment.from_row(row) if row else None
 
     def busy_intervals(self, doctor_id: int, day: date) -> list[tuple[datetime, datetime]]:
+        """Os horários ocupados do médico num dia: lista de (início, fim)."""
         start = datetime.combine(day, datetime.min.time())
         rows = self.conn.execute(
             """SELECT start_at, end_at FROM appointments
@@ -85,6 +92,9 @@ class AppointmentRepository(Repository):
         limit: int,
         offset: int,
     ) -> Page:
+        """Página de consultas por ordem de horário, com filtros opcionais por médico, paciente,
+        dia e situação.
+        """
         where, params = [], []
         if doctor_id is not None:
             where.append("a.doctor_id = ?")
@@ -102,6 +112,7 @@ class AppointmentRepository(Repository):
         return self._page(self._SELECT, where, params, Appointment, "start_at", limit, offset)
 
     def update_status(self, appointment_id: int, status: AppointmentStatus) -> None:
+        """Muda a situação da consulta (agendada, cancelada ou concluída)."""
         self.conn.execute(
             "UPDATE appointments SET status = ? WHERE id = ?", (status.value, appointment_id)
         )

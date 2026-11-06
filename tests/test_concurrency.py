@@ -25,6 +25,8 @@ def _slow_find_overlapping(self, *args, **kwargs):
 
 
 class ConcurrentBookingTest(APITestCase):
+    """Vários pedidos ao mesmo tempo para o mesmo horário: só um consegue marcar."""
+
     @mock.patch.object(AppointmentRepository, "find_overlapping", _slow_find_overlapping)
     def test_only_one_of_many_simultaneous_bookings_succeeds(self):
         headers = self.auth_headers()

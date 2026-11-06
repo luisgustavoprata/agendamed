@@ -1,3 +1,5 @@
+"""Dados de demonstração e exemplos da gestão (SEED_DEMO_DATA)."""
+
 import os
 import tempfile
 import unittest
@@ -8,6 +10,8 @@ from tests.base import NOW
 
 
 class SeedTest(unittest.TestCase):
+    """Os dados de demonstração são criados uma vez só."""
+
     def test_demo_data_is_created_once_on_startup(self):
         fd, db_path = tempfile.mkstemp(suffix=".db")
         os.close(fd)

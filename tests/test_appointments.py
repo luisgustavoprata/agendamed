@@ -1,9 +1,13 @@
+"""Consultas: marcar, regras de horário, conflitos, cancelar, concluir e horários livres."""
+
 from datetime import datetime
 
 from tests.base import APITestCase
 
 
 class AppointmentsTest(APITestCase):
+    """Casos de uso das consultas pela API, com um médico e um paciente."""
+
     def setUp(self):
         super().setUp()
         self.headers = self.auth_headers()

@@ -11,14 +11,17 @@ class CadastrosMixin:
     """Listar, criar e alterar procedimentos, convênios e contas."""
 
     def procedures(self, only_active=False) -> list[dict]:
+        """Os procedimentos da clínica (só os ativos, se pedido)."""
         return self._list(
             "procedures", "id, name, tuss_code, price_cents, active", only_active=only_active
         )
 
     def health_plans(self, only_active=False) -> list[dict]:
+        """Os convênios da clínica (só os ativos, se pedido)."""
         return self._list("health_plans", "id, name, ans_code, active", only_active=only_active)
 
     def accounts(self) -> list[dict]:
+        """As contas (Caixa, Banco...) com o saldo: entradas pagas menos saídas pagas."""
         rows = self.db.all(
             """SELECT a.id, a.name, a.active,
                       COALESCE(SUM(CASE WHEN t.kind = 'income' THEN t.amount_cents
@@ -32,6 +35,7 @@ class CadastrosMixin:
         return [_bools(dict(r), "active") for r in rows]
 
     def procedure(self, procedure_id: int) -> dict:
+        """Um procedimento pelo id; erro 404 se não for desta clínica."""
         return self._get(
             "procedures",
             "id, name, tuss_code, price_cents, active",
@@ -40,11 +44,15 @@ class CadastrosMixin:
         )
 
     def health_plan(self, plan_id: int) -> dict:
+        """Um convênio pelo id; erro 404 se não for desta clínica."""
         return self._get(
             "health_plans", "id, name, ans_code, active", plan_id, "Convênio não encontrado."
         )
 
     def save_procedure(self, data: ProcedureCreate, procedure_id: int | None = None) -> dict:
+        """Cria um procedimento (sem `procedure_id`) ou altera um existente. Nome repetido vira
+        erro 409.
+        """
         values = (data.name, data.tuss_code, data.price_cents, int(data.active))
         conflict = "Já existe um procedimento com este nome."
         if procedure_id is None:
@@ -67,6 +75,7 @@ class CadastrosMixin:
         return self.procedure(procedure_id)
 
     def save_health_plan(self, data: HealthPlanCreate, plan_id: int | None = None) -> dict:
+        """Cria um convênio (sem `plan_id`) ou altera um existente. Nome repetido vira erro 409."""
         values = (data.name, data.ans_code, int(data.active))
         conflict = "Já existe um convênio com este nome."
         if plan_id is None:
@@ -88,6 +97,7 @@ class CadastrosMixin:
         return self.health_plan(plan_id)
 
     def add_account(self, data: FinanceAccountCreate) -> dict:
+        """Cria uma conta e a devolve já com o saldo (zero)."""
         new_id = self._insert(
             "INSERT INTO finance_accounts (name, clinic_id) VALUES (?, ?)",
             (data.name, self.clinic_id),

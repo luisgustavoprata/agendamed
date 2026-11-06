@@ -6,6 +6,10 @@ from tests.base import APITestCase
 
 
 class GestaoBase(APITestCase):
+    """Base dos testes da gestão: dois médicos e um paciente, e atalhos `post`/`get` que já
+    conferem o status da resposta.
+    """
+
     def setUp(self):
         super().setUp()
         self.headers = self.auth_headers()
@@ -30,6 +34,8 @@ class GestaoBase(APITestCase):
 
 
 class RecordTest(GestaoBase):
+    """Prontuário: ficha clínica e registros."""
+
     def test_record_summary_and_entries(self):
         pid = self.patient["id"]
         self.client.put(
@@ -58,6 +64,8 @@ class RecordTest(GestaoBase):
 
 
 class PrescriptionTest(GestaoBase):
+    """Prescrições: documento para imprimir e conteúdo obrigatório."""
+
     def test_prescription_needs_doctor_and_content(self):
         pid = self.patient["id"]
         self.post(
@@ -83,6 +91,8 @@ class PrescriptionTest(GestaoBase):
 
 
 class FinanceTest(GestaoBase):
+    """Financeiro: lançamentos, faturamento, repasse e guias de convênio."""
+
     def setUp(self):
         super().setUp()
         self.consulta = self.post(
@@ -150,6 +160,8 @@ class FinanceTest(GestaoBase):
 
 
 class StockTest(GestaoBase):
+    """Estoque: entradas, saídas e o aviso de estoque baixo."""
+
     def test_movements(self):
         item = self.post("/stock/items", {"name": "Luvas", "unit": "cx", "min_quantity": 2})
         item = self.post(f"/stock/items/{item['id']}/movements", {"delta": 5})
@@ -158,6 +170,8 @@ class StockTest(GestaoBase):
 
 
 class PeriodTest(GestaoBase):
+    """Sem datas na consulta, o período padrão é o mês atual."""
+
     def test_default_period_is_current_month(self):
         self.now = datetime(2030, 2, 15, 9, 0)
         self.app.config["CLOCK"] = lambda: self.now

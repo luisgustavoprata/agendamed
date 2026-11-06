@@ -9,21 +9,27 @@ from agendamed.validators import format_cpf
 
 
 class AppointmentStatus(StrEnum):
+    """Situação da consulta: agendada, cancelada ou concluída (atendida)."""
+
     SCHEDULED = "scheduled"
     CANCELLED = "cancelled"
     COMPLETED = "completed"
 
 
 def to_db_datetime(value: datetime) -> str:
+    """Data e hora no formato gravado no banco: "2030-01-07T09:30:00"."""
     return value.isoformat(timespec="seconds")
 
 
 def to_api_datetime(value: datetime) -> str:
+    """Data e hora no formato da API, sem segundos: "2030-01-07T09:30"."""
     return value.isoformat(timespec="minutes")
 
 
 @dataclass(frozen=True, slots=True)
 class User:
+    """Uma pessoa da equipe com acesso ao sistema (login). Nesta versão não há perfis."""
+
     id: int
     email: str
     full_name: str
@@ -31,6 +37,7 @@ class User:
 
     @classmethod
     def from_row(cls, row: sqlite3.Row) -> "User":
+        """Monta o usuário a partir de uma linha da tabela `users`."""
         return cls(
             id=row["id"],
             email=row["email"],
@@ -39,11 +46,16 @@ class User:
         )
 
     def to_dict(self) -> dict:
+        """Dados do usuário no formato JSON da API (o hash da senha nunca sai daqui)."""
         return {"id": self.id, "email": self.email, "full_name": self.full_name}
 
 
 @dataclass(frozen=True, slots=True)
 class Doctor:
+    """Um médico da clínica, com o horário de atendimento (o mesmo em todos os dias úteis) e a
+    duração de cada consulta (`slot_minutes`).
+    """
+
     id: int
     name: str
     specialty: str
@@ -54,6 +66,7 @@ class Doctor:
 
     @classmethod
     def from_row(cls, row: sqlite3.Row) -> "Doctor":
+        """Monta o médico a partir de uma linha da tabela `doctors`."""
         return cls(
             id=row["id"],
             name=row["name"],
@@ -65,6 +78,7 @@ class Doctor:
         )
 
     def to_dict(self) -> dict:
+        """Dados do médico no formato JSON da API."""
         return {
             "id": self.id,
             "name": self.name,
@@ -78,6 +92,8 @@ class Doctor:
 
 @dataclass(frozen=True, slots=True)
 class Patient:
+    """Um paciente da clínica. O CPF é guardado só com os números."""
+
     id: int
     name: str
     cpf: str
@@ -87,6 +103,7 @@ class Patient:
 
     @classmethod
     def from_row(cls, row: sqlite3.Row) -> "Patient":
+        """Monta o paciente a partir de uma linha da tabela `patients`."""
         return cls(
             id=row["id"],
             name=row["name"],
@@ -97,6 +114,7 @@ class Patient:
         )
 
     def to_dict(self) -> dict:
+        """Dados do paciente no formato JSON da API (CPF com máscara)."""
         return {
             "id": self.id,
             "name": self.name,
@@ -109,6 +127,11 @@ class Patient:
 
 @dataclass(frozen=True, slots=True)
 class Appointment:
+    """Uma consulta marcada.
+
+    `doctor_name` e `patient_name` vêm preenchidos quando a busca junta as tabelas (JOIN).
+    """
+
     id: int
     doctor_id: int
     patient_id: int
@@ -121,6 +144,7 @@ class Appointment:
 
     @classmethod
     def from_row(cls, row: sqlite3.Row) -> "Appointment":
+        """Monta a consulta a partir de uma linha do banco (os nomes são opcionais)."""
         keys = row.keys()
         return cls(
             id=row["id"],
@@ -135,6 +159,7 @@ class Appointment:
         )
 
     def to_dict(self) -> dict:
+        """Dados da consulta no formato JSON da API."""
         return {
             "id": self.id,
             "doctor": {"id": self.doctor_id, "name": self.doctor_name},

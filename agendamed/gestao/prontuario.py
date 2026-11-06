@@ -11,6 +11,9 @@ class ProntuarioMixin:
     """Ficha clínica e registros do prontuário (anamnese, evolução, exames...)."""
 
     def clinical_summary(self, patient_id: int) -> dict:
+        """A ficha clínica do paciente, com quem atualizou por último. Se ainda não existe,
+        devolve os campos vazios.
+        """
         row = self.db.one(
             """SELECT c.allergies, c.conditions, c.medications, c.blood_type, c.notes,
                       c.updated_at, u.full_name AS updated_by
@@ -34,6 +37,7 @@ class ProntuarioMixin:
     def save_clinical_summary(
         self, patient_id: int, data: ClinicalSummaryUpdate, user_id: int, now: str
     ) -> dict:
+        """Grava a ficha clínica (cria na primeira vez, depois atualiza) e devolve a ficha."""
         values = (
             data.allergies,
             data.conditions,
@@ -64,6 +68,9 @@ class ProntuarioMixin:
         return self.clinical_summary(patient_id)
 
     def record_entries(self, patient_id: int) -> list[dict]:
+        """Os registros do prontuário do paciente, do mais novo para o mais antigo, com o nome do
+        tipo (ex.: "Anamnese").
+        """
         rows = self.db.all(
             """SELECT r.id, r.kind, r.content, r.created_at, r.appointment_id, r.doctor_id,
                       d.name AS doctor_name, u.full_name AS author
@@ -83,6 +90,11 @@ class ProntuarioMixin:
         user_id: int,
         now: str,
     ) -> dict:
+        """Acrescenta um registro ao prontuário e devolve o registro criado.
+
+        Registros não são alterados nem apagados depois (para corrigir, faz-se outro). Se o registro
+        citar uma consulta, ela precisa ser do mesmo paciente.
+        """
         if data.appointment_id is not None:
             appointment = self.require_appointment(data.appointment_id)
             if appointment["patient_id"] != patient_id:

@@ -6,10 +6,22 @@ DEFAULT_SECRET_KEY = "dev-chave-insegura-troque-antes-de-ir-para-producao"
 
 
 def env_bool(name: str, default: bool = False) -> bool:
+    """Lê uma variável de ambiente como sim/não.
+
+    Aceita "1", "true", "yes" e "sim" (sem diferença de maiúsculas) como verdadeiro; qualquer outro
+    valor é falso. Sem a variável, vale o `default`.
+    """
     return os.environ.get(name, str(default)).strip().lower() in {"1", "true", "yes", "sim"}
 
 
 class Config:
+    """Configurações do sistema, lidas das variáveis de ambiente.
+
+    Cada atributo em MAIÚSCULAS vira `app.config[...]` no Flask. O valor depois de
+    `os.environ.get(...)` é o padrão usado quando a variável não existe, pensado para o
+    desenvolvimento no computador. Em produção, os valores vêm do Render.
+    """
+
     SECRET_KEY = os.environ.get("SECRET_KEY", DEFAULT_SECRET_KEY)
     DATABASE = os.environ.get("DATABASE_PATH", "agendamed.db")
     TOKEN_EXPIRES_MINUTES = int(os.environ.get("TOKEN_EXPIRES_MINUTES", "60"))

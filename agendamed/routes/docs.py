@@ -1,3 +1,7 @@
+"""Documentação da API: a especificação OpenAPI (/openapi.json) e a página interativa do Swagger
+UI (/docs).
+"""
+
 from flask import Blueprint, current_app
 
 from agendamed.openapi import build_spec
@@ -45,6 +49,7 @@ SWAGGER_PAGE = f"""<!doctype html>
 
 @bp.get("/openapi.json")
 def openapi_spec():
+    """GET /openapi.json — a especificação da API, gerada em openapi.py."""
     from agendamed import __version__
 
     return build_spec(__version__)
@@ -52,6 +57,7 @@ def openapi_spec():
 
 @bp.get("/docs")
 def swagger_ui():
+    """GET /docs — a página do Swagger UI (com a política de segurança que libera o CDN)."""
     response = current_app.response_class(SWAGGER_PAGE, mimetype="text/html")
     response.headers["Content-Security-Policy"] = DOCS_CONTENT_SECURITY_POLICY
     return response

@@ -1,3 +1,5 @@
+"""Rotas das consultas: marcar, listar, cancelar, concluir e reabrir. Todas exigem login."""
+
 from flask import Blueprint, request, url_for
 
 from agendamed.db import get_db
@@ -20,11 +22,13 @@ bp.before_request(require_auth)
 
 
 def _service() -> AppointmentService:
+    """Serviço de consultas com o horário de agora."""
     return AppointmentService(get_db(), now())
 
 
 @bp.post("")
 def create_appointment():
+    """POST /appointments — marca uma consulta."""
     appointment = _service().book(parse_body(AppointmentCreate))
     location = url_for("appointments.get_appointment", appointment_id=appointment.id)
     return appointment.to_dict(), 201, {"Location": location}
@@ -32,6 +36,9 @@ def create_appointment():
 
 @bp.get("")
 def list_appointments():
+    """GET /appointments — lista as consultas (paginada; filtros por médico, paciente, data e
+    situação).
+    """
     raw_status = request.args.get("status")
     try:
         status = AppointmentStatus(raw_status) if raw_status else None
@@ -53,6 +60,7 @@ def list_appointments():
 
 @bp.get("/<int:appointment_id>")
 def get_appointment(appointment_id: int):
+    """GET /appointments/<id> — dados de uma consulta."""
     appointment = AppointmentRepository(get_db()).get(appointment_id)
     if appointment is None:
         raise NotFoundError("Consulta não encontrada.")
@@ -61,11 +69,13 @@ def get_appointment(appointment_id: int):
 
 @bp.post("/<int:appointment_id>/cancel")
 def cancel_appointment(appointment_id: int):
+    """POST /appointments/<id>/cancel — cancela a consulta."""
     return _service().cancel(appointment_id).to_dict()
 
 
 @bp.post("/<int:appointment_id>/complete")
 def complete_appointment(appointment_id: int):
+    """POST /appointments/<id>/complete — marca a consulta como atendida."""
     return _service().complete(appointment_id).to_dict()
 
 

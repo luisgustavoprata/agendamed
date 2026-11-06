@@ -17,6 +17,7 @@ def overlaps(a_start: datetime, a_end: datetime, b_start: datetime, b_end: datet
 
 
 def working_day_bounds(doctor: Doctor, day: date) -> Interval:
+    """Início e fim do expediente do médico no dia informado."""
     return datetime.combine(day, doctor.work_start), datetime.combine(day, doctor.work_end)
 
 

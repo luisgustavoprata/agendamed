@@ -6,6 +6,7 @@ EMAIL_PATTERN = re.compile(r"^[^@\s]+@[^@\s]+\.[A-Za-z]{2,}$")
 
 
 def only_digits(value: str) -> str:
+    """Tira tudo o que não é número (ex.: "529.982.247-25" → "52998224725")."""
     return re.sub(r"\D", "", value)
 
 
@@ -26,5 +27,6 @@ def is_valid_cpf(cpf: str) -> bool:
 
 
 def format_cpf(cpf: str) -> str:
+    """Põe a máscara no CPF: "52998224725" → "529.982.247-25"."""
     d = only_digits(cpf)
     return f"{d[:3]}.{d[3:6]}.{d[6:9]}-{d[9:]}"

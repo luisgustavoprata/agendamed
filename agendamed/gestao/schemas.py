@@ -52,6 +52,8 @@ PAYMENT_METHODS = (
 
 
 class ClinicalSummaryUpdate(InputSchema):
+    """Ficha clínica do paciente: alergias, doenças, remédios e tipo sanguíneo."""
+
     allergies: str | None = Field(default=None, max_length=2000)
     conditions: str | None = Field(default=None, max_length=2000)
     medications: str | None = Field(default=None, max_length=2000)
@@ -60,6 +62,8 @@ class ClinicalSummaryUpdate(InputSchema):
 
 
 class RecordEntryCreate(InputSchema):
+    """Um registro novo no prontuário (o tipo e o texto)."""
+
     kind: Literal[
         "anamnese", "evolucao", "exame_fisico", "diagnostico", "conduta", "exame", "anotacao"
     ]
@@ -69,6 +73,8 @@ class RecordEntryCreate(InputSchema):
 
 
 class PrescriptionItem(InputSchema):
+    """Um item da receita: o remédio ou exame, a quantidade e como usar."""
+
     name: ShortText = Field(description="Medicamento ou exame.")
     dosage: str | None = Field(default=None, max_length=200, description="Ex.: 500 mg, 1 caixa")
     instructions: str | None = Field(
@@ -77,6 +83,8 @@ class PrescriptionItem(InputSchema):
 
 
 class PrescriptionCreate(InputSchema):
+    """Um documento novo para o paciente (receita, atestado, exames...)."""
+
     kind: Literal["simples", "controle_especial", "atestado", "exames", "relatorio"]
     doctor_id: DbId | None = None
     items: list[PrescriptionItem] = Field(default=[], max_length=30)
@@ -86,12 +94,15 @@ class PrescriptionCreate(InputSchema):
 
     @model_validator(mode="after")
     def needs_content(self) -> PrescriptionCreate:
+        """O documento precisa de ao menos um item ou um texto."""
         if not self.items and not self.text:
             raise ValueError("Inclua ao menos um item ou um texto.")
         return self
 
 
 class ProcedureCreate(InputSchema):
+    """Procedimento (ex.: consulta, retorno, exame), com código TUSS e preço."""
+
     name: ShortText
     tuss_code: str | None = Field(
         default=None, pattern=r"^\d{8}$", description="Código TUSS (8 dígitos)"
@@ -101,6 +112,8 @@ class ProcedureCreate(InputSchema):
 
 
 class HealthPlanCreate(InputSchema):
+    """Convênio (operadora de plano de saúde), com o registro na ANS."""
+
     name: ShortText
     ans_code: str | None = Field(
         default=None, pattern=r"^\d{6}$", description="Registro ANS da operadora (6 dígitos)"
@@ -109,10 +122,14 @@ class HealthPlanCreate(InputSchema):
 
 
 class FinanceAccountCreate(InputSchema):
+    """Conta financeira (ex.: Caixa, Banco)."""
+
     name: ShortText
 
 
 class TransactionCreate(InputSchema):
+    """Lançamento novo: receita (income) ou despesa (expense)."""
+
     kind: Literal["income", "expense"]
     description: ShortText
     category: ShortText
@@ -126,6 +143,8 @@ class TransactionCreate(InputSchema):
 
 
 class TransactionUpdate(InputSchema):
+    """Alteração de um lançamento: só os campos enviados mudam."""
+
     description: ShortText | None = None
     category: ShortText | None = None
     amount_cents: PositiveCents | None = None
@@ -133,6 +152,8 @@ class TransactionUpdate(InputSchema):
 
 
 class TransactionPay(InputSchema):
+    """Pagamento de um lançamento: a data, a conta e a forma de pagamento."""
+
     paid_on: BoundedDate
     account_id: DbId | None = None
     payment_method: Literal[PAYMENT_METHODS] | None = None  # type: ignore[valid-type]
@@ -158,18 +179,24 @@ class AppointmentCharge(InputSchema):
 
 
 class PayoutRuleSet(InputSchema):
+    """Regra de repasse: o percentual do médico (geral ou por procedimento)."""
+
     doctor_id: DbId
     procedure_id: DbId | None = None
     percent: int = Field(ge=0, le=100)
 
 
 class StockItemCreate(InputSchema):
+    """Item de estoque novo: nome, unidade e quantidade mínima."""
+
     name: ShortText
     unit: str = Field(default="un", min_length=1, max_length=20)
     min_quantity: int = Field(default=0, ge=0, le=1_000_000)
 
 
 class StockItemUpdate(InputSchema):
+    """Alteração de um item de estoque: só os campos enviados mudam."""
+
     name: ShortText | None = None
     unit: str | None = Field(default=None, min_length=1, max_length=20)
     min_quantity: int | None = Field(default=None, ge=0, le=1_000_000)
@@ -177,6 +204,8 @@ class StockItemUpdate(InputSchema):
 
 
 class StockMovementCreate(InputSchema):
+    """Entrada (quantidade positiva) ou saída (negativa) do estoque."""
+
     delta: int = Field(
         ge=-1_000_000, le=1_000_000, description="Positivo = entrada, negativo = saída."
     )
@@ -184,6 +213,7 @@ class StockMovementCreate(InputSchema):
 
     @model_validator(mode="after")
     def not_zero(self) -> StockMovementCreate:
+        """Uma movimentação de zero itens não faz sentido."""
         if self.delta == 0:
             raise ValueError("A quantidade não pode ser zero.")
         return self

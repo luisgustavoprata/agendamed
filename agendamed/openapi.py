@@ -22,10 +22,12 @@ REF = "#/components/schemas/{model}"
 
 
 def _ref(name: str) -> dict:
+    """Referência a um esquema dos componentes: {"$ref": "#/components/schemas/X"}."""
     return {"$ref": REF.format(model=name)}
 
 
 def _obj(properties: dict, required: list[str] | None = None) -> dict:
+    """Esquema de um objeto JSON (por padrão, todos os campos são obrigatórios)."""
     return {"type": "object", "properties": properties, "required": required or list(properties)}
 
 
@@ -42,6 +44,7 @@ _SUMMARY = _obj({"id": _INT, "name": _STR})
 
 
 def _page(item: str) -> dict:
+    """Esquema de uma página de resultados de `item` (items, total, limit, offset)."""
     items = {"type": "array", "items": _ref(item)}
     return _obj({"items": items, "total": _INT, "limit": _INT, "offset": _INT})
 
@@ -127,6 +130,7 @@ ERROR_DESCRIPTIONS = {
 
 
 def _param(name: str, where: str, schema: dict, description: str, required: bool = False):
+    """Um parâmetro de rota (path) ou de query string (?nome=)."""
     return {
         "name": name,
         "in": where,
@@ -137,6 +141,7 @@ def _param(name: str, where: str, schema: dict, description: str, required: bool
 
 
 def _id(name: str, label: str) -> dict:
+    """Parâmetro de rota com um id numérico (ex.: /doctors/{doctor_id})."""
     return _param(name, "path", {"type": "integer", "minimum": 1}, f"Identificador {label}.")
 
 
@@ -165,6 +170,11 @@ def _op(
     auth=True,
     description=None,
 ):
+    """Descrição de uma operação da API: resumo, grupo (tag), resposta de sucesso, corpo,
+    parâmetros e respostas de erro.
+
+    Rotas com login (`auth`) ganham automaticamente a resposta 401.
+    """
     responses = {
         str(ok): {
             "description": "Sucesso.",
@@ -192,6 +202,7 @@ def _op(
 
 
 def _gestao_paths() -> dict:
+    """As rotas da gestão: prontuário, prescrições, financeiro, estoque e relatórios."""
     patient_id = _id("patient_id", "do paciente")
     appointment_id = _id("appointment_id", "da consulta")
     period = [
@@ -458,6 +469,7 @@ def _gestao_paths() -> dict:
 
 
 def _paths() -> dict:
+    """As rotas principais: acesso, médicos, pacientes, consultas e sistema."""
     doctor_id = _id("doctor_id", "do médico")
     patient_id = _id("patient_id", "do paciente")
     appointment_id = _id("appointment_id", "da consulta")
@@ -656,6 +668,7 @@ def _paths() -> dict:
 
 @cache
 def build_spec(version: str) -> dict:
+    """Monta a especificação OpenAPI completa (usada por /openapi.json e /docs)."""
     schemas = {}
     for name, model in {**REQUEST_MODELS, **GESTAO_MODELS}.items():
         schema = model.model_json_schema(ref_template=REF)

@@ -1,3 +1,5 @@
+"""Criação de conta, login e proteção das rotas por token."""
+
 from datetime import UTC, datetime, timedelta
 
 import jwt
@@ -6,6 +8,8 @@ from tests.base import APITestCase
 
 
 class AuthTest(APITestCase):
+    """Cadastro, login, dados de quem está logado e tokens inválidos ou vencidos."""
+
     def test_register_returns_user_without_password(self):
         response = self.register()
         self.assertEqual(response.status_code, 201)

@@ -6,39 +6,61 @@ from werkzeug.exceptions import HTTPException
 
 
 class DomainError(Exception):
+    """Erro de regra do sistema, que vira uma resposta JSON com status HTTP.
+
+    Lance uma das subclasses abaixo (ex.: `raise NotFoundError("Paciente não encontrado.")`); o
+    tratador em `register_error_handlers` monta a resposta `{"detail": "mensagem"}` com o status da
+    classe.
+    """
+
     status_code = 400
 
     def __init__(self, message: str, headers: dict | None = None):
+        """Guarda a mensagem e cabeçalhos HTTP extras para a resposta (ex.: Retry-After)."""
         super().__init__(message)
         self.message = message
         self.headers = headers or {}
 
 
 class BadRequestError(DomainError):
+    """400: a requisição veio malformada (ex.: parâmetro inválido)."""
+
     status_code = 400
 
 
 class UnauthorizedError(DomainError):
+    """401: falta login, ou o token de acesso é inválido ou venceu."""
+
     status_code = 401
 
 
 class ForbiddenError(DomainError):
+    """403: a pessoa está logada, mas o perfil dela não permite a ação."""
+
     status_code = 403
 
 
 class NotFoundError(DomainError):
+    """404: o registro não existe (ou é de outra clínica)."""
+
     status_code = 404
 
 
 class ConflictError(DomainError):
+    """409: a ação conflita com o estado atual (ex.: horário já ocupado)."""
+
     status_code = 409
 
 
 class BusinessRuleError(DomainError):
+    """422: os dados estão no formato certo, mas quebram uma regra."""
+
     status_code = 422
 
 
 class TooManyRequestsError(DomainError):
+    """429: tentativas demais em pouco tempo; espere e tente de novo."""
+
     status_code = 429
 
 
@@ -73,6 +95,11 @@ VALIDATION_MESSAGES = {
 
 
 def _translate(err: dict) -> str:
+    """Mensagem em português para um erro de validação do Pydantic.
+
+    Usa VALIDATION_MESSAGES pelo tipo do erro; sem tradução, aproveita a mensagem original, tirando
+    o prefixo "Value error, ".
+    """
     template = VALIDATION_MESSAGES.get(err["type"])
     if template is None:
         return err["msg"].removeprefix("Value error, ")
@@ -83,6 +110,7 @@ def _translate(err: dict) -> str:
 
 
 def _format_validation_error(exc: ValidationError) -> list[dict]:
+    """Lista os erros de validação no formato da API: [{"field": ..., "message": ...}]."""
     errors = []
     for err in exc.errors():
         field = ".".join(str(part) for part in err["loc"]) or "body"
@@ -91,6 +119,13 @@ def _format_validation_error(exc: ValidationError) -> list[dict]:
 
 
 def register_error_handlers(app: Flask) -> None:
+    """Ensina o Flask a transformar erros em respostas JSON padronizadas.
+
+    - DomainError (e subclasses): status da classe e a mensagem em "detail";
+    - ValidationError do Pydantic: 422 com a lista de campos inválidos;
+    - erros HTTP do Flask (404, 405, 413, 415...): mensagem em português.
+    """
+
     @app.errorhandler(DomainError)
     def handle_domain_error(exc: DomainError):
         return {"detail": exc.message}, exc.status_code, exc.headers

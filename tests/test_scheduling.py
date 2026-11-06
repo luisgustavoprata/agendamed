@@ -21,6 +21,8 @@ TUESDAY = date(2030, 1, 8)
 
 
 class OverlapTest(unittest.TestCase):
+    """Quando dois intervalos de tempo se sobrepõem."""
+
     def test_back_to_back_intervals_do_not_overlap(self):
         a = (datetime(2030, 1, 8, 9, 0), datetime(2030, 1, 8, 9, 30))
         b = (datetime(2030, 1, 8, 9, 30), datetime(2030, 1, 8, 10, 0))
@@ -33,6 +35,8 @@ class OverlapTest(unittest.TestCase):
 
 
 class ValidateBookingTest(unittest.TestCase):
+    """Horários válidos e inválidos para marcar."""
+
     def test_returns_end_time_for_valid_slot(self):
         end = validate_booking(DOCTOR, datetime(2030, 1, 8, 10, 30), NOW)
         self.assertEqual(end, datetime(2030, 1, 8, 11, 0))
@@ -53,6 +57,8 @@ class ValidateBookingTest(unittest.TestCase):
 
 
 class FreeSlotsTest(unittest.TestCase):
+    """Cálculo dos horários livres do dia."""
+
     def test_full_day_without_appointments(self):
         slots = free_slots(DOCTOR, TUESDAY, busy=[], now=NOW)
         self.assertEqual(len(slots), 8)  # 08:00 às 12:00, de 30 em 30 min

@@ -13,12 +13,18 @@ from agendamed.errors import ConflictError
 
 @dataclass(frozen=True, slots=True)
 class Page:
+    """Uma página de resultados: os itens, o total de registros e a posição.
+
+    `limit` é quantos itens vêm por página e `offset`, quantos foram pulados.
+    """
+
     items: list
     total: int
     limit: int
     offset: int
 
     def to_dict(self) -> dict:
+        """A página no formato JSON da API."""
         return {
             "items": [item.to_dict() for item in self.items],
             "total": self.total,
@@ -28,10 +34,16 @@ class Page:
 
 
 class Repository:
+    """Base dos repositórios: guarda a conexão e tem ajudantes de SQL."""
+
     def __init__(self, conn: sqlite3.Connection):
+        """Guarda a conexão com o banco (sqlite3)."""
         self.conn = conn
 
     def _insert(self, sql: str, params: tuple, conflict_message: str) -> int:
+        """Executa um INSERT e devolve o id criado. Se o banco recusar por duplicidade (ex.: CPF
+        já cadastrado), lança ConflictError com `conflict_message`.
+        """
         try:
             cursor = self.conn.execute(sql, params)
         except sqlite3.IntegrityError as exc:
@@ -39,6 +51,9 @@ class Repository:
         return cursor.lastrowid
 
     def _page(self, base_sql, where, params, model, order_by, limit, offset) -> Page:
+        """Busca uma página de resultados: conta o total com os mesmos filtros (`where`) e traz
+        só os itens da página, na ordem `order_by`, convertidos com `model.from_row`.
+        """
         where_sql = f" WHERE {' AND '.join(where)}" if where else ""
         total = self.conn.execute(
             f"SELECT COUNT(*) FROM ({base_sql}{where_sql})", params

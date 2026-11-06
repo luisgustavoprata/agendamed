@@ -20,12 +20,14 @@ class PrescricoesMixin:
     """
 
     def _prescription(self, row) -> dict:
+        """Converte a linha do banco: os itens saem do JSON e entra o nome do tipo."""
         item = dict(row)
         item["items"] = json.loads(item["items"] or "[]")
         item["kind_label"] = PRESCRIPTION_KINDS[item["kind"]]
         return item
 
     def prescriptions(self, patient_id: int) -> list[dict]:
+        """Os documentos do paciente (receitas, atestados...), do mais novo para o mais antigo."""
         rows = self.db.all(
             f"{self._PRESCRIPTION_SELECT} WHERE pr.patient_id = ? AND pr.clinic_id = ? "
             "ORDER BY pr.created_at DESC, pr.id DESC",
@@ -34,6 +36,7 @@ class PrescricoesMixin:
         return [self._prescription(r) for r in rows]
 
     def prescription(self, prescription_id: int) -> dict:
+        """Um documento pelo id; erro 404 se não for desta clínica."""
         row = self.db.one(
             f"{self._PRESCRIPTION_SELECT} WHERE pr.id = ? AND pr.clinic_id = ?",
             (prescription_id, self.clinic_id),
@@ -45,6 +48,7 @@ class PrescricoesMixin:
     def add_prescription(
         self, patient_id: int, data: PrescriptionCreate, doctor_id: int, user_id: int, now: str
     ) -> dict:
+        """Cria um documento para o paciente, em nome do médico."""
         items = json.dumps([i.model_dump() for i in data.items], ensure_ascii=False)
         new_id = self.db.insert(
             """INSERT INTO prescriptions (clinic_id, patient_id, doctor_id, kind, items, text,

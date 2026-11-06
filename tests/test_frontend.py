@@ -1,7 +1,11 @@
+"""A interface web (HTML, CSS e JavaScript) é servida pelo próprio Flask."""
+
 from tests.base import APITestCase
 
 
 class FrontendTest(APITestCase):
+    """Páginas e arquivos da interface, mensagens traduzidas e o /health."""
+
     def test_index_serves_web_app(self):
         response = self.client.get("/")
         self.assertEqual(response.status_code, 200)

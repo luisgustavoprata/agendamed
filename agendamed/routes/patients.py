@@ -1,3 +1,5 @@
+"""Rotas dos pacientes: cadastro, busca e edição. Todas exigem login."""
+
 from flask import Blueprint, request, url_for
 
 from agendamed.db import get_db
@@ -13,6 +15,7 @@ bp.before_request(require_auth)
 
 @bp.post("")
 def create_patient():
+    """POST /patients — cadastra um paciente."""
     patient = PatientRepository(get_db()).create(parse_body(PatientCreate))
     location = url_for("patients.get_patient", patient_id=patient.id)
     return patient.to_dict(), 201, {"Location": location}
@@ -20,6 +23,7 @@ def create_patient():
 
 @bp.get("")
 def list_patients():
+    """GET /patients — lista os pacientes (paginada; ?q= busca por nome ou CPF)."""
     limit, offset = pagination()
     search = request.args.get("q", "").strip()
     # Permite buscar pelo CPF com ou sem máscara.
@@ -31,6 +35,7 @@ def list_patients():
 
 @bp.get("/<int:patient_id>")
 def get_patient(patient_id: int):
+    """GET /patients/<id> — dados de um paciente."""
     patient = PatientRepository(get_db()).get(patient_id)
     if patient is None:
         raise NotFoundError("Paciente não encontrado.")

@@ -7,7 +7,14 @@ from agendamed.repositories.base import Page, Repository
 
 
 class DoctorRepository(Repository):
+    """SQL dos médicos. Médicos removidos ficam no banco com `active = 0` (as consultas antigas
+    continuam ligadas a eles), mas somem das buscas.
+    """
+
     def create(self, data) -> Doctor:
+        """Cadastra um médico. Se o CRM for de um médico removido, ele volta, com os dados novos
+        e o histórico antigo.
+        """
         removed = self.conn.execute(
             "SELECT id FROM doctors WHERE crm = ? AND active = 0", (data.crm,)
         ).fetchone()
@@ -49,6 +56,7 @@ class DoctorRepository(Repository):
         return Doctor.from_row(row) if row else None
 
     def count_future_appointments(self, doctor_id: int, now: datetime) -> int:
+        """Quantas consultas marcadas o médico tem depois de `now`."""
         return self.conn.execute(
             """SELECT COUNT(*) FROM appointments
                WHERE doctor_id = ? AND status = 'scheduled' AND start_at > ?""",
@@ -56,9 +64,13 @@ class DoctorRepository(Repository):
         ).fetchone()[0]
 
     def deactivate(self, doctor_id: int) -> None:
+        """Marca o médico como removido (some das listas e da agenda)."""
         self.conn.execute("UPDATE doctors SET active = 0 WHERE id = ?", (doctor_id,))
 
     def list(self, *, specialty: str | None, limit: int, offset: int) -> Page:
+        """Página de médicos ativos em ordem alfabética. `specialty` filtra pela especialidade
+        (parte do nome basta).
+        """
         where, params = ["active = 1"], []
         if specialty:
             where.append("specialty LIKE ?")

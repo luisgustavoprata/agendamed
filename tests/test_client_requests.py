@@ -14,6 +14,10 @@ from tests.base import APITestCase
 
 
 class ClientRequestsTest(APITestCase):
+    """Pedidos da clínica: vários aparelhos, documentos sem consulta, reabrir consulta concluída
+    por engano e relatório médico.
+    """
+
     def setUp(self):
         super().setUp()
         self.headers = self.auth_headers()
@@ -86,6 +90,8 @@ class ClientRequestsTest(APITestCase):
 
 
 class CancelledChargeTest(ClientRequestsTest):
+    """Consulta cancelada sai das contas a receber."""
+
     def test_cancelled_appointment_leaves_the_receivables(self):
         procedure = self.client.post(
             "/procedures", headers=self.headers, json={"name": "Consulta", "price_cents": 30000}
@@ -105,6 +111,8 @@ class CancelledChargeTest(ClientRequestsTest):
 
 
 class OldDatabaseTest(APITestCase):
+    """Banco antigo passa a aceitar o tipo "relatório" depois do ajuste."""
+
     def test_old_prescriptions_table_accepts_reports_after_upgrade(self):
         db_path = self.app.config["DATABASE"]
         conn = sqlite3.connect(db_path)

@@ -1,4 +1,34 @@
-"""AgendaMed — API REST para agendamento de consultas médicas."""
+"""AgendaMed (Clínica Vida) — API REST e interface para agendamento de consultas médicas.
+
+Este arquivo cria a aplicação Flask (`create_app`): lê a configuração, liga o banco,
+registra as rotas da API e a página, e aplica os cabeçalhos de segurança em todas as
+respostas.
+
+Mapa do pacote `agendamed/`, do mais básico ao mais específico:
+
+    config.py                 configurações lidas das variáveis de ambiente
+    db.py                     conexão com o banco SQLite e ajustes de bancos antigos
+    schema.sql                tabelas da agenda (usuários, médicos, pacientes, consultas)
+    schema_gestao.sql         tabelas da gestão (prontuário, financeiro, estoque...)
+    cli.py                    comandos de terminal (flask init-db, flask seed)
+    errors.py                 erros do sistema e como viram respostas JSON
+    security.py               senhas (hash) e tokens de acesso
+    ratelimit.py              limite de tentativas de login (contra força bruta)
+    validators.py             CPF e e-mail
+    models.py                 entidades: usuário, médico, paciente, consulta
+    schemas.py                formato dos dados que a API recebe (validação)
+    repositories/             todo o SQL das entidades acima
+    services/                 regras de agenda e casos de uso das consultas
+    gestao/                   prontuário, prescrições, financeiro, estoque e relatórios
+    accounts.py               acessos da equipe vindos das variáveis de ambiente
+    seed.py, seed_gestao.py   dados de demonstração
+    openapi.py                documentação da API (/docs)
+    routes/                   os endereços da API, um arquivo por assunto
+    static/                   a interface web (HTML, CSS e JavaScript)
+
+Caminho de uma requisição: rota (routes/) → serviço ou repositório → banco. A resposta
+volta como JSON, e a interface em static/ só conversa com o servidor por essa API.
+"""
 
 from datetime import datetime
 from zoneinfo import ZoneInfo
@@ -46,7 +76,12 @@ def clinic_clock(timezone: str):
 
 
 def create_app(config: dict | None = None) -> Flask:
-    """Cria e configura a aplicação (padrão *application factory*)."""
+    """Cria e configura a aplicação (padrão *application factory*).
+
+    `config` sobrescreve as configurações (os testes usam isso para trocar o banco e o
+    relógio). O servidor (gunicorn) chama `create_app()` sem nada.
+    """
+    # 1. Configuração: valores de config.py, o relógio da clínica e o que vier em `config`.
     app = Flask(__name__)
     app.config.from_object(Config)
     app.config["CLOCK"] = clinic_clock(app.config["CLINIC_TIMEZONE"])
@@ -54,12 +89,15 @@ def create_app(config: dict | None = None) -> Flask:
     if config:
         app.config.update(config)
 
+    # JSON das respostas: campos na ordem em que foram escritos e acentos sem escape.
     app.json.sort_keys = False
     app.json.ensure_ascii = False
 
+    # Atrás do proxy do Render, o IP e o HTTPS verdadeiros vêm nos cabeçalhos X-Forwarded-*.
     if app.config["TRUST_PROXY"]:
         app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
 
+    # 2. Limites de tentativas de login (contra força bruta), guardados em app.extensions.
     app.extensions["login_limiter"] = LoginRateLimiter(
         app.config["LOGIN_MAX_ATTEMPTS"], app.config["LOGIN_WINDOW_SECONDS"]
     )
@@ -69,13 +107,16 @@ def create_app(config: dict | None = None) -> Flask:
         app.config["LOGIN_IP_MAX_ATTEMPTS"], app.config["LOGIN_WINDOW_SECONDS"]
     )
 
+    # 3. Banco, comandos de terminal e tratamento de erros.
     db.init_app(app)
     cli.init_app(app)
     errors.register_error_handlers(app)
 
+    # 4. Rotas da API (cada blueprint é um arquivo de agendamed/routes/).
     for blueprint in (auth.bp, doctors.bp, patients.bp, appointments.bp, docs.bp, gestao.bp):
         app.register_blueprint(blueprint)
 
+    # 5. A página da interface.
     @app.get("/")
     def web_app():
         """Interface web (HTML, CSS e JS estáticos que consomem a própria API)."""
@@ -83,6 +124,7 @@ def create_app(config: dict | None = None) -> Flask:
 
     @app.get("/health")
     def health():
+        """GET /health — o servidor está no ar? Também informa os modos da instalação."""
         # "demo" avisa a interface que existe uma conta de demonstração pronta, e
         # "signup" se a aba de criar conta deve aparecer.
         return {
@@ -92,8 +134,10 @@ def create_app(config: dict | None = None) -> Flask:
             "signup": app.config["ALLOW_SIGNUP"],
         }
 
+    # 6. Cabeçalhos de segurança, colocados em todas as respostas.
     @app.after_request
     def security_headers(response):
+        """Protege as páginas no navegador (setdefault: uma rota pode definir os seus)."""
         response.headers.setdefault("Content-Security-Policy", CONTENT_SECURITY_POLICY)
         response.headers.setdefault("X-Content-Type-Options", "nosniff")
         response.headers.setdefault("X-Frame-Options", "DENY")
@@ -121,6 +165,7 @@ def create_app(config: dict | None = None) -> Flask:
             response.headers.setdefault("Cache-Control", "no-store")
         return response
 
+    # 7. Banco pronto: tabelas, acessos da equipe e dados de demonstração (se pedidos).
     with app.app_context():
         db.init_db()
         # Contas da equipe (ADMIN_*, DOCTOR_*, SECRETARY_*), criadas ou atualizadas a cada início.
@@ -134,6 +179,7 @@ def create_app(config: dict | None = None) -> Flask:
             # demonstração (admin@agendamed.dev): só a equipe entra.
             seed(db.get_db(), demo_login=not app.config["STAFF_ACCOUNTS"])
 
+    # 8. Por último: avisa no log se a SECRET_KEY ainda é a de exemplo.
     if not app.config.get("TESTING") and app.config["SECRET_KEY"] == DEFAULT_SECRET_KEY:
         app.logger.warning("SECRET_KEY padrão em uso. Defina a variável de ambiente SECRET_KEY.")
 

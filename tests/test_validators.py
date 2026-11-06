@@ -1,9 +1,13 @@
+"""Validação e formatação de CPF."""
+
 import unittest
 
 from agendamed.validators import format_cpf, is_valid_cpf
 
 
 class CpfValidatorTest(unittest.TestCase):
+    """CPF válido (com ou sem máscara), inválido e a máscara."""
+
     def test_accepts_valid_cpf_with_or_without_mask(self):
         for cpf in ("529.982.247-25", "52998224725", "083.016.613-05"):
             with self.subTest(cpf=cpf):

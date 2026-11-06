@@ -1,3 +1,5 @@
+"""Rotas dos médicos: cadastro, lista, remoção e horários livres. Todas exigem login."""
+
 from flask import Blueprint, request, url_for
 
 from agendamed.db import get_db
@@ -14,6 +16,7 @@ bp.before_request(require_auth)
 
 @bp.post("")
 def create_doctor():
+    """POST /doctors — cadastra um médico."""
     doctor = DoctorRepository(get_db()).create(parse_body(DoctorCreate))
     location = url_for("doctors.get_doctor", doctor_id=doctor.id)
     return doctor.to_dict(), 201, {"Location": location}
@@ -21,6 +24,7 @@ def create_doctor():
 
 @bp.get("")
 def list_doctors():
+    """GET /doctors — lista os médicos (paginada; ?specialty= filtra)."""
     limit, offset = pagination()
     page = DoctorRepository(get_db()).list(
         specialty=request.args.get("specialty"), limit=limit, offset=offset
@@ -30,6 +34,7 @@ def list_doctors():
 
 @bp.get("/<int:doctor_id>")
 def get_doctor(doctor_id: int):
+    """GET /doctors/<id> — dados de um médico."""
     doctor = DoctorRepository(get_db()).get(doctor_id)
     if doctor is None:
         raise NotFoundError("Médico não encontrado.")
@@ -55,6 +60,7 @@ def delete_doctor(doctor_id: int):
 
 @bp.get("/<int:doctor_id>/availability")
 def doctor_availability(doctor_id: int):
+    """GET /doctors/<id>/availability?date=AAAA-MM-DD — horários livres do médico no dia."""
     day = query_date("date", required=True)
     slots = AppointmentService(get_db(), now()).availability(doctor_id, day)
     return {

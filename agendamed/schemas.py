@@ -19,36 +19,54 @@ Name = Annotated[str, Field(min_length=3, max_length=120)]
 
 
 class InputSchema(BaseModel):
+    """Base de todos os esquemas de entrada.
+
+    Tira espaços do começo e do fim dos textos e recusa campos que o esquema não conhece (assim um
+    erro de digitação no nome do campo não passa em silêncio).
+    """
+
     model_config = ConfigDict(str_strip_whitespace=True, extra="forbid")
 
 
 class EmailMixin(InputSchema):
+    """Campo `email` validado e em minúsculas, para reaproveitar nos esquemas."""
+
     email: str = Field(max_length=255)
 
     @field_validator("email")
     @classmethod
     def validate_email(cls, value: str) -> str:
+        """Confere o formato do e-mail e o guarda em minúsculas."""
         if not EMAIL_PATTERN.match(value):
             raise ValueError("E-mail inválido.")
         return value.lower()
 
 
 class UserCreate(EmailMixin):
+    """Criação de conta de acesso: e-mail, nome e senha."""
+
     full_name: Name
     password: str = Field(min_length=8, max_length=128)
 
 
 class LoginRequest(InputSchema):
+    """Corpo do login: e-mail e senha."""
+
     email: str
     password: str
 
     @field_validator("email")
     @classmethod
     def normalize_email(cls, value: str) -> str:
+        """Põe o e-mail em minúsculas (o cadastro também guarda assim)."""
         return value.lower()
 
 
 class DoctorCreate(InputSchema):
+    """Cadastro de um médico: dados, duração da consulta e o horário de atendimento (`work_start`
+    a `work_end`).
+    """
+
     name: Name
     specialty: str = Field(min_length=3, max_length=80)
     crm: str = Field(pattern=r"^\d{4,7}/[A-Z]{2}$", examples=["123456/SP"])
@@ -58,6 +76,7 @@ class DoctorCreate(InputSchema):
 
     @model_validator(mode="after")
     def validate_working_hours(self) -> "DoctorCreate":
+        """O fim do expediente vem depois do início, e cabe ao menos uma consulta nele."""
         start = self.work_start.hour * 60 + self.work_start.minute
         end = self.work_end.hour * 60 + self.work_end.minute
         if end <= start:
@@ -68,6 +87,8 @@ class DoctorCreate(InputSchema):
 
 
 class PatientCreate(EmailMixin):
+    """Cadastro de um paciente."""
+
     name: Name
     cpf: str
     phone: str | None = Field(default=None, pattern=r"^\+?[\d\s()-]{10,20}$")
@@ -76,6 +97,7 @@ class PatientCreate(EmailMixin):
     @field_validator("cpf")
     @classmethod
     def validate_cpf(cls, value: str) -> str:
+        """Confere os dígitos do CPF e guarda só os números."""
         if not is_valid_cpf(value):
             raise ValueError("CPF inválido.")
         return only_digits(value)
@@ -83,6 +105,7 @@ class PatientCreate(EmailMixin):
     @field_validator("birth_date")
     @classmethod
     def validate_birth_date(cls, value: date) -> date:
+        """A data de nascimento não pode estar no futuro."""
         if value > date.today():
             raise ValueError("A data de nascimento não pode estar no futuro.")
         return value
@@ -100,6 +123,7 @@ class PatientUpdate(InputSchema):
     @field_validator("name", "cpf", "email", "birth_date", mode="before")
     @classmethod
     def required_if_sent(cls, value):
+        """Campos obrigatórios podem ficar de fora, mas não podem ser enviados vazios (null)."""
         if value is None:
             raise ValueError("Este campo não pode ficar vazio.")
         return value
@@ -107,6 +131,7 @@ class PatientUpdate(InputSchema):
     @field_validator("cpf")
     @classmethod
     def validate_cpf(cls, value: str) -> str:
+        """Confere os dígitos do CPF e guarda só os números."""
         if not is_valid_cpf(value):
             raise ValueError("CPF inválido.")
         return only_digits(value)
@@ -114,6 +139,7 @@ class PatientUpdate(InputSchema):
     @field_validator("email")
     @classmethod
     def validate_email(cls, value: str) -> str:
+        """Confere o formato do e-mail e o guarda em minúsculas."""
         if not EMAIL_PATTERN.match(value):
             raise ValueError("E-mail inválido.")
         return value.lower()
@@ -121,21 +147,26 @@ class PatientUpdate(InputSchema):
     @field_validator("birth_date")
     @classmethod
     def validate_birth_date(cls, value: date) -> date:
+        """A data de nascimento não pode estar no futuro."""
         if value > date.today():
             raise ValueError("A data de nascimento não pode estar no futuro.")
         return value
 
     @model_validator(mode="after")
     def require_some_change(self) -> "PatientUpdate":
+        """Recusa um pedido de edição sem nenhum campo."""
         if not self.model_fields_set:
             raise ValueError("Envie ao menos um campo para alterar.")
         return self
 
     def changes(self) -> dict:
+        """Só os campos que vieram no pedido, com os valores novos."""
         return {name: getattr(self, name) for name in self.model_fields_set}
 
 
 class AppointmentCreate(InputSchema):
+    """Marcação de consulta: médico, paciente e horário."""
+
     doctor_id: PositiveInt
     patient_id: PositiveInt
     start_at: NaiveDatetime = Field(description="Horário local da clínica, sem fuso.")

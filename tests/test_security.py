@@ -1,9 +1,13 @@
+"""Segurança: tentativas de login, limites, cabeçalhos e cadastro aberto ou fechado."""
+
 from datetime import timedelta
 
 from tests.base import APITestCase
 
 
 class LoginRateLimitTest(APITestCase):
+    """Bloqueio depois de muitas senhas erradas (por e-mail e por IP)."""
+
     def setUp(self):
         super().setUp()
         self.register()
@@ -56,6 +60,8 @@ class LoginRateLimitTest(APITestCase):
 
 
 class SignupTest(APITestCase):
+    """O cadastro de contas pode ser fechado (ALLOW_SIGNUP)."""
+
     def test_signup_can_be_closed(self):
         self.app.config["ALLOW_SIGNUP"] = False
         response = self.client.post(
@@ -71,6 +77,8 @@ class SignupTest(APITestCase):
 
 
 class RequestLimitsTest(APITestCase):
+    """Corpo grande demais é recusado e respostas da API não ficam em cache."""
+
     def test_rejects_oversized_body(self):
         response = self.client.post(
             "/auth/login", data="x" * (70 * 1024), content_type="application/json"
@@ -83,6 +91,8 @@ class RequestLimitsTest(APITestCase):
 
 
 class SecurityHeadersTest(APITestCase):
+    """Os cabeçalhos de segurança aparecem em todas as respostas."""
+
     def test_security_headers_on_every_response(self):
         for path in ("/", "/health", "/doctors"):
             with self.subTest(path=path):

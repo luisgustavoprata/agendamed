@@ -14,6 +14,11 @@ MAX_PAGE_SIZE = 100
 
 
 def parse_body[SchemaT: BaseModel](schema: type[SchemaT]) -> SchemaT:
+    """Lê o corpo JSON da requisição e o valida com o esquema informado.
+
+    Corpo que não é um objeto JSON vira erro 400; dados inválidos viram erro 422 (o Pydantic lança
+    ValidationError e o tratador de erros responde).
+    """
     data = request.get_json(silent=True)
     if not isinstance(data, dict):
         raise BadRequestError("O corpo da requisição deve ser um objeto JSON.")
@@ -21,6 +26,7 @@ def parse_body[SchemaT: BaseModel](schema: type[SchemaT]) -> SchemaT:
 
 
 def query_int(name: str, *, default: int | None = None, minimum: int = 0) -> int | None:
+    """Lê um número inteiro da query string (?nome=10), com valor padrão e mínimo."""
     raw = request.args.get(name)
     if raw is None:
         return default
@@ -34,6 +40,7 @@ def query_int(name: str, *, default: int | None = None, minimum: int = 0) -> int
 
 
 def query_date(name: str, *, required: bool = False) -> date | None:
+    """Lê uma data "AAAA-MM-DD" da query string (?nome=2030-01-07)."""
     raw = request.args.get(name)
     if raw is None:
         if required:
@@ -46,6 +53,7 @@ def query_date(name: str, *, required: bool = False) -> date | None:
 
 
 def pagination() -> tuple[int, int]:
+    """Lê `limit` (padrão 20, máximo 100) e `offset` (padrão 0) da query string."""
     limit = min(query_int("limit", default=20, minimum=1), MAX_PAGE_SIZE)
     offset = query_int("offset", default=0)
     return limit, offset

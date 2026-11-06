@@ -1,7 +1,11 @@
+"""Cadastro, busca e edição de médicos e pacientes."""
+
 from tests.base import APITestCase
 
 
 class DoctorsTest(APITestCase):
+    """Cadastro de médicos: CRM único, expediente válido, filtro e paginação."""
+
     def setUp(self):
         super().setUp()
         self.headers = self.auth_headers()
@@ -51,6 +55,8 @@ class DoctorsTest(APITestCase):
 
 
 class PatientsTest(APITestCase):
+    """Cadastro de pacientes: CPF válido e único e busca por nome ou CPF."""
+
     def setUp(self):
         super().setUp()
         self.headers = self.auth_headers()
@@ -105,6 +111,8 @@ class PatientsTest(APITestCase):
 
 
 class PatientUpdateTests(APITestCase):
+    """Edição de pacientes: só os campos enviados mudam."""
+
     def setUp(self) -> None:
         super().setUp()
         self.headers = self.auth_headers()

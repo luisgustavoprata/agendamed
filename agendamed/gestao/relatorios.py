@@ -9,7 +9,14 @@ class RelatoriosMixin:
     """Painel de gestão (consultas, faturamento, estoque) e lote de guias TISS."""
 
     def overview(self, start: date, end: date, today: str) -> dict:
+        """O painel de gestão do período.
+
+        Junta as consultas por situação (inclusive as prováveis faltas), os pacientes novos, o fluxo
+        de caixa, o faturamento por médico e por convênio e os itens com estoque baixo.
+        """
+        # Limites do período como texto, para comparar com start_at (o dia final inteiro conta).
         start_s, end_s = start.isoformat(), f"{end.isoformat()}T23:59:59"
+        # Consultas do período, contadas por situação: {"scheduled": 10, "completed": 25, ...}.
         by_status = {
             r["status"]: r["total"]
             for r in self.db.all(
@@ -24,6 +31,7 @@ class RelatoriosMixin:
             "'scheduled' AND start_at BETWEEN ? AND ? AND start_at < ?",
             (self.clinic_id, start_s, end_s, today),
         )["total"]
+        # Cada médico ativo, com quantas consultas teve no período (concluídas e canceladas).
         doctors = self.db.all(
             """SELECT d.id, d.name,
                       SUM(CASE WHEN a.status = 'completed' THEN 1 ELSE 0 END) AS completed,
@@ -34,6 +42,8 @@ class RelatoriosMixin:
                WHERE d.clinic_id = ? AND d.active = 1 GROUP BY d.id, d.name ORDER BY d.name""",
             (start_s, end_s, self.clinic_id),
         )
+        # Faturamento: soma o que foi RECEBIDO no período por médico e por convênio (ou
+        # "Particular").
         revenue = {}
         by_plan: dict[str, int] = {}
         for tx in self.transactions(
@@ -43,6 +53,7 @@ class RelatoriosMixin:
                 revenue[tx["doctor_id"]] = revenue.get(tx["doctor_id"], 0) + tx["amount_cents"]
             plan = tx["health_plan_name"] or "Particular"
             by_plan[plan] = by_plan.get(plan, 0) + tx["amount_cents"]
+        # Pacientes novos: aqueles cuja PRIMEIRA consulta (não cancelada) caiu no período.
         new_patients = self.db.one(
             """SELECT COUNT(*) AS total FROM (
                    SELECT patient_id, MIN(start_at) AS first FROM appointments
@@ -87,6 +98,9 @@ class RelatoriosMixin:
     def tiss_batch(self, plan_id: int, start: date, end: date, today: str) -> dict:
         """Guias de consulta de um convênio no período, prontas para imprimir em lote."""
         plan = self.health_plan(plan_id)
+        # Reaproveita a busca padrão de lançamentos (_TX_SELECT, em financeiro.py) e põe no
+        # começo da lista de colunas os dados que a guia precisa: a data da consulta, o CRM e
+        # a especialidade do médico, o CPF e o nascimento do paciente.
         rows = self.db.all(
             f"""{self._TX_SELECT.replace('SELECT t.id,', '''SELECT a.start_at,
                    d.crm AS doctor_crm, d.specialty AS doctor_specialty, p.cpf AS patient_cpf,

@@ -38,6 +38,9 @@ class FinanceiroMixin:
 
     @staticmethod
     def _tx(row, today: str) -> dict:
+        """Converte a linha do banco e calcula a situação: "paid" (pago), "overdue" (vencido:
+        venceu antes de hoje sem pagamento) ou "open" (em aberto).
+        """
         item = dict(row)
         if item["paid_on"]:
             item["status"] = "paid"
@@ -46,6 +49,7 @@ class FinanceiroMixin:
         return item
 
     def transaction(self, tx_id: int, today: str) -> dict:
+        """Um lançamento pelo id; erro 404 se não for desta clínica."""
         row = self.db.one(
             f"{self._TX_SELECT} WHERE t.id = ? AND t.clinic_id = ?", (tx_id, self.clinic_id)
         )
@@ -65,6 +69,7 @@ class FinanceiroMixin:
         health_plan_id: int | None = None,
     ) -> list[dict]:
         # Pago: entra pela data do pagamento. Em aberto: pela data de vencimento.
+        """Lançamentos do período, com filtros opcionais (tipo, situação, conta e convênio)."""
         where = ["t.clinic_id = ?", "COALESCE(t.paid_on, t.due_date) BETWEEN ? AND ?"]
         params: list = [self.clinic_id, start.isoformat(), end.isoformat()]
         if kind:
@@ -88,11 +93,13 @@ class FinanceiroMixin:
         return [self._tx(r, today) for r in rows]
 
     def _check_links(self, *, account_id=None, doctor_id=None, patient_id=None) -> None:
+        """Confere que a conta, o médico e o paciente citados são desta clínica."""
         self._require_in_clinic("finance_accounts", account_id, "Conta não encontrada.")
         self._require_in_clinic("doctors", doctor_id, "Médico não encontrado.")
         self._require_in_clinic("patients", patient_id, "Paciente não encontrado.")
 
     def add_transaction(self, data: TransactionCreate, today: str) -> dict:
+        """Cria um lançamento (receita ou despesa) e o devolve."""
         self._check_links(
             account_id=data.account_id, doctor_id=data.doctor_id, patient_id=data.patient_id
         )
@@ -118,6 +125,7 @@ class FinanceiroMixin:
         return self.transaction(tx_id, today)
 
     def update_transaction(self, tx_id: int, data: TransactionUpdate, today: str) -> dict:
+        """Altera os campos enviados (descrição, categoria, valor ou vencimento)."""
         self.transaction(tx_id, today)
         changes = data.model_dump(exclude_unset=True, exclude_none=True)
         if changes:
@@ -131,6 +139,9 @@ class FinanceiroMixin:
         return self.transaction(tx_id, today)
 
     def pay_transaction(self, tx_id: int, data: TransactionPay, today: str) -> dict:
+        """Registra o pagamento de um lançamento em aberto (data, conta e forma). Pagar duas
+        vezes é recusado.
+        """
         tx = self.transaction(tx_id, today)
         if tx["paid_on"]:
             raise ConflictError("Este lançamento já foi pago.")
@@ -143,6 +154,7 @@ class FinanceiroMixin:
         return self.transaction(tx_id, today)
 
     def unpay_transaction(self, tx_id: int, today: str) -> dict:
+        """Desfaz o pagamento: o lançamento volta a ficar em aberto."""
         self.transaction(tx_id, today)
         self.db.execute(
             "UPDATE finance_transactions SET paid_on = NULL WHERE id = ? AND clinic_id = ?",
@@ -151,6 +163,7 @@ class FinanceiroMixin:
         return self.transaction(tx_id, today)
 
     def delete_transaction(self, tx_id: int, today: str) -> None:
+        """Apaga um lançamento em aberto (um pago precisa ter o pagamento desfeito antes)."""
         tx = self.transaction(tx_id, today)
         if tx["paid_on"]:
             raise ConflictError("Desfaça o pagamento antes de excluir o lançamento.")
@@ -166,6 +179,7 @@ class FinanceiroMixin:
             raise ConflictError("Consulta cancelada não pode ser faturada.")
         procedure = self.procedure(data.procedure_id)
         plan = self.health_plan(data.health_plan_id) if data.health_plan_id else None
+        # Sem valor informado, vale o preço cadastrado do procedimento.
         amount = data.amount_cents if data.amount_cents is not None else procedure["price_cents"]
         if amount <= 0:
             raise BusinessRuleError("Informe o valor da consulta.")
@@ -200,6 +214,7 @@ class FinanceiroMixin:
         return self.transaction(tx_id, today)
 
     def appointment_charge(self, appointment_id: int, today: str) -> dict | None:
+        """A cobrança de uma consulta, se ela já foi faturada."""
         row = self.db.one(
             f"{self._TX_SELECT} WHERE t.appointment_id = ? AND t.clinic_id = ?",
             (appointment_id, self.clinic_id),
@@ -231,11 +246,13 @@ class FinanceiroMixin:
             "overdue_expense": 0,
         }
         for tx in txs:
+            # Soma no total certo: income_paid, income_open, expense_paid ou expense_open.
             paid = tx["status"] == "paid"
             key = f"{tx['kind']}_{'paid' if paid else 'open'}"
             totals[key] += tx["amount_cents"]
             if tx["status"] == "overdue":
                 totals[f"overdue_{tx['kind']}"] += tx["amount_cents"]
+            # Por dia: o dia do pagamento (pago) ou do vencimento (em aberto).
             day = days.setdefault(
                 tx["paid_on"] or tx["due_date"], {"income_cents": 0, "expense_cents": 0}
             )

@@ -1,3 +1,5 @@
+"""Acessos da equipe criados pelas variáveis de ambiente (ADMIN_*, DOCTOR_*...)."""
+
 import os
 import tempfile
 import unittest
@@ -16,6 +18,10 @@ ENV = {
 
 
 class AccountsTest(unittest.TestCase):
+    """Lê os perfis das variáveis, recusa senha curta, cria os acessos e respeita a senha trocada
+    ao reiniciar.
+    """
+
     def setUp(self):
         fd, self.db_path = tempfile.mkstemp(suffix=".db")
         os.close(fd)

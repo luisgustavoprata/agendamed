@@ -24,6 +24,7 @@ def get_db() -> sqlite3.Connection:
 
 
 def close_db(_exc: BaseException | None = None) -> None:
+    """Fecha a conexão da requisição, se houver (o Flask chama ao fim de cada uma)."""
     conn = g.pop("db", None)
     if conn is not None:
         conn.close()
@@ -47,6 +48,7 @@ def transaction(conn: sqlite3.Connection, *, immediate: bool = False) -> Iterato
 
 
 def init_db() -> None:
+    """Cria as tabelas que faltam (schema.sql) e ajusta bancos de versões anteriores."""
     conn = get_db()
     conn.executescript(SCHEMA_PATH.read_text(encoding="utf-8"))
     _upgrade(conn)
@@ -94,4 +96,5 @@ def _allow_medical_report(conn) -> None:
 
 
 def init_app(app: Flask) -> None:
+    """Liga o banco ao Flask: a conexão de cada requisição é fechada no fim dela."""
     app.teardown_appcontext(close_db)

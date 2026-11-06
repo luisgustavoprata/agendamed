@@ -1,3 +1,5 @@
+"""Remover médico: some das listas e da agenda, mas o histórico fica."""
+
 import sqlite3
 from datetime import timedelta
 
@@ -6,6 +8,8 @@ from tests.base import APITestCase
 
 
 class RemoveDoctorTest(APITestCase):
+    """Remoção de médico: consultas futuras, histórico e o mesmo CRM de volta."""
+
     def setUp(self):
         super().setUp()
         self.headers = self.auth_headers()
@@ -64,6 +68,8 @@ class RemoveDoctorTest(APITestCase):
 
 
 class UpgradeOldDatabaseTest(APITestCase):
+    """Banco antigo ganha a coluna `active` dos médicos ao iniciar."""
+
     def test_adds_active_column_to_existing_database(self):
         with self.app.app_context():
             conn = get_db()

@@ -11,6 +11,7 @@ class RepasseMixin:
     """Regras de repasse (percentual por médico e procedimento) e o cálculo do período."""
 
     def payout_rules(self) -> list[dict]:
+        """As regras de repasse: o percentual de cada médico, geral ou por procedimento."""
         rows = self.db.all(
             """SELECT r.id, r.doctor_id, d.name AS doctor_name, r.procedure_id,
                       p.name AS procedure_name, r.percent
@@ -22,6 +23,9 @@ class RepasseMixin:
         return [dict(r) for r in rows]
 
     def set_payout_rule(self, data: PayoutRuleSet) -> list[dict]:
+        """Cria ou troca a regra do médico (para um procedimento, ou geral quando `procedure_id`
+        está vazio) e devolve todas as regras.
+        """
         self.require_doctor(data.doctor_id)
         if data.procedure_id is not None:
             self.procedure(data.procedure_id)
@@ -39,19 +43,22 @@ class RepasseMixin:
         return self.payout_rules()
 
     def delete_payout_rule(self, rule_id: int) -> None:
+        """Apaga uma regra de repasse."""
         self.db.execute(
             "DELETE FROM payout_rules WHERE id = ? AND clinic_id = ?", (rule_id, self.clinic_id)
         )
 
     def payouts(self, start: date, end: date, today: str) -> list[dict]:
         """Repasse de cada médico sobre o que foi RECEBIDO no período."""
+        # Regras indexadas por (médico, procedimento); procedimento None = regra geral.
         rules = {(r["doctor_id"], r["procedure_id"]): r["percent"] for r in self.payout_rules()}
         report: dict[int, dict] = {}
         for tx in self.transactions(
             start=start, end=end, today=today, kind="income", status="paid"
         ):
             if not tx["doctor_id"]:
-                continue
+                continue  # receita sem médico ligado não gera repasse
+            # Vale a regra do procedimento; sem ela, a regra geral do médico; sem nenhuma, 0%.
             percent = rules.get(
                 (tx["doctor_id"], tx["procedure_id"]), rules.get((tx["doctor_id"], None), 0)
             )
