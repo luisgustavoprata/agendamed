@@ -289,7 +289,7 @@ class Gestao:
 
     def require_patient(self, patient_id: int) -> dict:
         row = self.db.one(
-            "SELECT id, name, cpf, birth_date FROM patients " "WHERE id = ? AND clinic_id = ?",
+            "SELECT id, name, cpf, birth_date FROM patients WHERE id = ? AND clinic_id = ?",
             (patient_id, self.clinic_id),
         )
         if row is None:
@@ -298,7 +298,7 @@ class Gestao:
 
     def require_doctor(self, doctor_id: int) -> dict:
         row = self.db.one(
-            "SELECT id, name, specialty, crm FROM doctors " "WHERE id = ? AND clinic_id = ?",
+            "SELECT id, name, specialty, crm FROM doctors WHERE id = ? AND clinic_id = ?",
             (doctor_id, self.clinic_id),
         )
         if row is None:
@@ -365,7 +365,7 @@ class Gestao:
             user_id,
         )
         exists = self.db.one(
-            "SELECT patient_id FROM patient_clinical WHERE patient_id = ? " "AND clinic_id = ?",
+            "SELECT patient_id FROM patient_clinical WHERE patient_id = ? AND clinic_id = ?",
             (patient_id, self.clinic_id),
         )
         if exists:
@@ -699,7 +699,7 @@ class Gestao:
     def unpay_transaction(self, tx_id: int, today: str) -> dict:
         self.transaction(tx_id, today)
         self.db.execute(
-            "UPDATE finance_transactions SET paid_on = NULL " "WHERE id = ? AND clinic_id = ?",
+            "UPDATE finance_transactions SET paid_on = NULL WHERE id = ? AND clinic_id = ?",
             (tx_id, self.clinic_id),
         )
         return self.transaction(tx_id, today)
@@ -940,7 +940,7 @@ class Gestao:
                     f"{item['name']}."
                 )
             self.db.execute(
-                "UPDATE stock_items SET quantity = quantity + ? " "WHERE id = ? AND clinic_id = ?",
+                "UPDATE stock_items SET quantity = quantity + ? WHERE id = ? AND clinic_id = ?",
                 (data.delta, item_id, self.clinic_id),
             )
             self.db.execute(

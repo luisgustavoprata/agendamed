@@ -138,7 +138,7 @@ class FinanceTest(GestaoBase):
         payouts = self.get("/finance/payouts?start=2030-01-01&end=2030-01-31")["items"]
         self.assertEqual(payouts[0]["payout_cents"], 6000)
         batch = self.get(
-            f"/finance/tiss?health_plan_id={self.plan['id']}" "&start=2030-01-01&end=2030-01-31"
+            f"/finance/tiss?health_plan_id={self.plan['id']}&start=2030-01-01&end=2030-01-31"
         )
         self.assertEqual(batch["guides"][0]["plan_card"], "0001234")
 
