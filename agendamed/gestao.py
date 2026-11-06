@@ -42,8 +42,15 @@ PRESCRIPTION_KINDS = {
     "exames": "Solicitação de exames",
     "relatorio": "Relatório médico",
 }
-PAYMENT_METHODS = ("dinheiro", "pix", "cartao_credito", "cartao_debito", "boleto",
-                   "transferencia", "convenio")
+PAYMENT_METHODS = (
+    "dinheiro",
+    "pix",
+    "cartao_credito",
+    "cartao_debito",
+    "boleto",
+    "transferencia",
+    "convenio",
+)
 
 
 # ---------------------------------------------------------------- esquemas de entrada
@@ -58,8 +65,9 @@ class ClinicalSummaryUpdate(InputSchema):
 
 
 class RecordEntryCreate(InputSchema):
-    kind: Literal["anamnese", "evolucao", "exame_fisico", "diagnostico", "conduta", "exame",
-                  "anotacao"]
+    kind: Literal[
+        "anamnese", "evolucao", "exame_fisico", "diagnostico", "conduta", "exame", "anotacao"
+    ]
     content: LongText
     doctor_id: DbId | None = None
     appointment_id: DbId | None = None
@@ -68,16 +76,18 @@ class RecordEntryCreate(InputSchema):
 class PrescriptionItem(InputSchema):
     name: ShortText = Field(description="Medicamento ou exame.")
     dosage: str | None = Field(default=None, max_length=200, description="Ex.: 500 mg, 1 caixa")
-    instructions: str | None = Field(default=None, max_length=1000,
-                                     description="Posologia. Ex.: 1 comprimido de 8/8h por 7 dias")
+    instructions: str | None = Field(
+        default=None, max_length=1000, description="Posologia. Ex.: 1 comprimido de 8/8h por 7 dias"
+    )
 
 
 class PrescriptionCreate(InputSchema):
     kind: Literal["simples", "controle_especial", "atestado", "exames", "relatorio"]
     doctor_id: DbId | None = None
     items: list[PrescriptionItem] = Field(default=[], max_length=30)
-    text: str | None = Field(default=None, max_length=5000,
-                             description="Texto livre (atestado ou observações).")
+    text: str | None = Field(
+        default=None, max_length=5000, description="Texto livre (atestado ou observações)."
+    )
 
     @model_validator(mode="after")
     def needs_content(self) -> PrescriptionCreate:
@@ -88,16 +98,18 @@ class PrescriptionCreate(InputSchema):
 
 class ProcedureCreate(InputSchema):
     name: ShortText
-    tuss_code: str | None = Field(default=None, pattern=r"^\d{8}$",
-                                  description="Código TUSS (8 dígitos)")
+    tuss_code: str | None = Field(
+        default=None, pattern=r"^\d{8}$", description="Código TUSS (8 dígitos)"
+    )
     price_cents: Cents
     active: bool = True
 
 
 class HealthPlanCreate(InputSchema):
     name: ShortText
-    ans_code: str | None = Field(default=None, pattern=r"^\d{6}$",
-                                 description="Registro ANS da operadora (6 dígitos)")
+    ans_code: str | None = Field(
+        default=None, pattern=r"^\d{6}$", description="Registro ANS da operadora (6 dígitos)"
+    )
     active: bool = True
 
 
@@ -136,12 +148,15 @@ class AppointmentCharge(InputSchema):
 
     procedure_id: DbId
     health_plan_id: DbId | None = None
-    amount_cents: Cents | None = Field(default=None,
-                                       description="Se vazio, usa o preço do procedimento.")
-    plan_card: str | None = Field(default=None, max_length=40,
-                                  description="Número da carteirinha do convênio")
-    plan_guide: str | None = Field(default=None, max_length=40,
-                                   description="Número da guia / senha de autorização")
+    amount_cents: Cents | None = Field(
+        default=None, description="Se vazio, usa o preço do procedimento."
+    )
+    plan_card: str | None = Field(
+        default=None, max_length=40, description="Número da carteirinha do convênio"
+    )
+    plan_guide: str | None = Field(
+        default=None, max_length=40, description="Número da guia / senha de autorização"
+    )
     paid_on: BoundedDate | None = None
     account_id: DbId | None = None
     payment_method: Literal[PAYMENT_METHODS] | None = None  # type: ignore[valid-type]
@@ -167,8 +182,9 @@ class StockItemUpdate(InputSchema):
 
 
 class StockMovementCreate(InputSchema):
-    delta: int = Field(ge=-1_000_000, le=1_000_000,
-                       description="Positivo = entrada, negativo = saída.")
+    delta: int = Field(
+        ge=-1_000_000, le=1_000_000, description="Positivo = entrada, negativo = saída."
+    )
     reason: str | None = Field(default=None, max_length=200)
 
     @model_validator(mode="after")
@@ -272,15 +288,19 @@ class Gestao:
     # --- conferências de pertencimento à clínica
 
     def require_patient(self, patient_id: int) -> dict:
-        row = self.db.one("SELECT id, name, cpf, birth_date FROM patients "
-                          "WHERE id = ? AND clinic_id = ?", (patient_id, self.clinic_id))
+        row = self.db.one(
+            "SELECT id, name, cpf, birth_date FROM patients " "WHERE id = ? AND clinic_id = ?",
+            (patient_id, self.clinic_id),
+        )
         if row is None:
             raise NotFoundError("Paciente não encontrado.")
         return dict(row)
 
     def require_doctor(self, doctor_id: int) -> dict:
-        row = self.db.one("SELECT id, name, specialty, crm FROM doctors "
-                          "WHERE id = ? AND clinic_id = ?", (doctor_id, self.clinic_id))
+        row = self.db.one(
+            "SELECT id, name, specialty, crm FROM doctors " "WHERE id = ? AND clinic_id = ?",
+            (doctor_id, self.clinic_id),
+        )
         if row is None:
             raise NotFoundError("Médico não encontrado.")
         return dict(row)
@@ -301,8 +321,12 @@ class Gestao:
     def _require_in_clinic(self, table: str, item_id: int | None, message: str) -> None:
         if item_id is None:
             return
-        if self.db.one(f"SELECT id FROM {table} WHERE id = ? AND clinic_id = ?",
-                       (item_id, self.clinic_id)) is None:
+        if (
+            self.db.one(
+                f"SELECT id FROM {table} WHERE id = ? AND clinic_id = ?", (item_id, self.clinic_id)
+            )
+            is None
+        ):
             raise NotFoundError(message)
 
     # --- prontuário
@@ -315,16 +339,35 @@ class Gestao:
                WHERE c.patient_id = ? AND c.clinic_id = ?""",
             (patient_id, self.clinic_id),
         )
-        empty = dict.fromkeys(("allergies", "conditions", "medications", "blood_type", "notes",
-                               "updated_at", "updated_by"))
+        empty = dict.fromkeys(
+            (
+                "allergies",
+                "conditions",
+                "medications",
+                "blood_type",
+                "notes",
+                "updated_at",
+                "updated_by",
+            )
+        )
         return _row(row) or empty
 
-    def save_clinical_summary(self, patient_id: int, data: ClinicalSummaryUpdate,
-                              user_id: int, now: str) -> dict:
-        values = (data.allergies, data.conditions, data.medications, data.blood_type,
-                  data.notes, now, user_id)
-        exists = self.db.one("SELECT patient_id FROM patient_clinical WHERE patient_id = ? "
-                             "AND clinic_id = ?", (patient_id, self.clinic_id))
+    def save_clinical_summary(
+        self, patient_id: int, data: ClinicalSummaryUpdate, user_id: int, now: str
+    ) -> dict:
+        values = (
+            data.allergies,
+            data.conditions,
+            data.medications,
+            data.blood_type,
+            data.notes,
+            now,
+            user_id,
+        )
+        exists = self.db.one(
+            "SELECT patient_id FROM patient_clinical WHERE patient_id = ? " "AND clinic_id = ?",
+            (patient_id, self.clinic_id),
+        )
         if exists:
             self.db.execute(
                 """UPDATE patient_clinical SET allergies = ?, conditions = ?, medications = ?,
@@ -353,8 +396,14 @@ class Gestao:
         )
         return [{**dict(r), "kind_label": RECORD_KINDS[r["kind"]]} for r in rows]
 
-    def add_record_entry(self, patient_id: int, data: RecordEntryCreate, doctor_id: int | None,
-                         user_id: int, now: str) -> dict:
+    def add_record_entry(
+        self,
+        patient_id: int,
+        data: RecordEntryCreate,
+        doctor_id: int | None,
+        user_id: int,
+        now: str,
+    ) -> dict:
         if data.appointment_id is not None:
             appointment = self.require_appointment(data.appointment_id)
             if appointment["patient_id"] != patient_id:
@@ -363,8 +412,16 @@ class Gestao:
             """INSERT INTO record_entries (clinic_id, patient_id, doctor_id, appointment_id, kind,
                                            content, created_by, created_at)
                VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
-            (self.clinic_id, patient_id, doctor_id, data.appointment_id, data.kind,
-             data.content, user_id, now),
+            (
+                self.clinic_id,
+                patient_id,
+                doctor_id,
+                data.appointment_id,
+                data.kind,
+                data.content,
+                user_id,
+                now,
+            ),
         )
         return next(e for e in self.record_entries(patient_id) if e["id"] == entry_id)
 
@@ -393,14 +450,17 @@ class Gestao:
         return [self._prescription(r) for r in rows]
 
     def prescription(self, prescription_id: int) -> dict:
-        row = self.db.one(f"{self._PRESCRIPTION_SELECT} WHERE pr.id = ? AND pr.clinic_id = ?",
-                          (prescription_id, self.clinic_id))
+        row = self.db.one(
+            f"{self._PRESCRIPTION_SELECT} WHERE pr.id = ? AND pr.clinic_id = ?",
+            (prescription_id, self.clinic_id),
+        )
         if row is None:
             raise NotFoundError("Prescrição não encontrada.")
         return self._prescription(row)
 
-    def add_prescription(self, patient_id: int, data: PrescriptionCreate, doctor_id: int,
-                         user_id: int, now: str) -> dict:
+    def add_prescription(
+        self, patient_id: int, data: PrescriptionCreate, doctor_id: int, user_id: int, now: str
+    ) -> dict:
         items = json.dumps([i.model_dump() for i in data.items], ensure_ascii=False)
         new_id = self.db.insert(
             """INSERT INTO prescriptions (clinic_id, patient_id, doctor_id, kind, items, text,
@@ -414,13 +474,15 @@ class Gestao:
 
     def _list(self, table: str, columns: str, *, only_active: bool) -> list[dict]:
         where = "clinic_id = ?" + (" AND active = 1" if only_active else "")
-        rows = self.db.all(f"SELECT {columns} FROM {table} WHERE {where} ORDER BY name",
-                           (self.clinic_id,))
+        rows = self.db.all(
+            f"SELECT {columns} FROM {table} WHERE {where} ORDER BY name", (self.clinic_id,)
+        )
         return [_bools(dict(r), "active") for r in rows]
 
     def procedures(self, only_active=False) -> list[dict]:
-        return self._list("procedures", "id, name, tuss_code, price_cents, active",
-                          only_active=only_active)
+        return self._list(
+            "procedures", "id, name, tuss_code, price_cents, active", only_active=only_active
+        )
 
     def health_plans(self, only_active=False) -> list[dict]:
         return self._list("health_plans", "id, name, ans_code, active", only_active=only_active)
@@ -439,19 +501,26 @@ class Gestao:
         return [_bools(dict(r), "active") for r in rows]
 
     def _get(self, table: str, columns: str, item_id: int, message: str) -> dict:
-        row = self.db.one(f"SELECT {columns} FROM {table} WHERE id = ? AND clinic_id = ?",
-                          (item_id, self.clinic_id))
+        row = self.db.one(
+            f"SELECT {columns} FROM {table} WHERE id = ? AND clinic_id = ?",
+            (item_id, self.clinic_id),
+        )
         if row is None:
             raise NotFoundError(message)
         return _bools(dict(row), "active")
 
     def procedure(self, procedure_id: int) -> dict:
-        return self._get("procedures", "id, name, tuss_code, price_cents, active",
-                         procedure_id, "Procedimento não encontrado.")
+        return self._get(
+            "procedures",
+            "id, name, tuss_code, price_cents, active",
+            procedure_id,
+            "Procedimento não encontrado.",
+        )
 
     def health_plan(self, plan_id: int) -> dict:
-        return self._get("health_plans", "id, name, ans_code, active", plan_id,
-                         "Convênio não encontrado.")
+        return self._get(
+            "health_plans", "id, name, ans_code, active", plan_id, "Convênio não encontrado."
+        )
 
     def save_procedure(self, data: ProcedureCreate, procedure_id: int | None = None) -> dict:
         values = (data.name, data.tuss_code, data.price_cents, int(data.active))
@@ -459,13 +528,18 @@ class Gestao:
         if procedure_id is None:
             procedure_id = self._insert(
                 "INSERT INTO procedures (name, tuss_code, price_cents, active, clinic_id) "
-                "VALUES (?, ?, ?, ?, ?)", (*values, self.clinic_id), conflict)
+                "VALUES (?, ?, ?, ?, ?)",
+                (*values, self.clinic_id),
+                conflict,
+            )
         else:
             self.procedure(procedure_id)
             try:
                 self.db.execute(
                     "UPDATE procedures SET name = ?, tuss_code = ?, price_cents = ?, active = ? "
-                    "WHERE id = ? AND clinic_id = ?", (*values, procedure_id, self.clinic_id))
+                    "WHERE id = ? AND clinic_id = ?",
+                    (*values, procedure_id, self.clinic_id),
+                )
             except self.db.integrity_errors as exc:
                 raise ConflictError(conflict) from exc
         return self.procedure(procedure_id)
@@ -476,13 +550,17 @@ class Gestao:
         if plan_id is None:
             plan_id = self._insert(
                 "INSERT INTO health_plans (name, ans_code, active, clinic_id) VALUES (?, ?, ?, ?)",
-                (*values, self.clinic_id), conflict)
+                (*values, self.clinic_id),
+                conflict,
+            )
         else:
             self.health_plan(plan_id)
             try:
                 self.db.execute(
                     "UPDATE health_plans SET name = ?, ans_code = ?, active = ? "
-                    "WHERE id = ? AND clinic_id = ?", (*values, plan_id, self.clinic_id))
+                    "WHERE id = ? AND clinic_id = ?",
+                    (*values, plan_id, self.clinic_id),
+                )
             except self.db.integrity_errors as exc:
                 raise ConflictError(conflict) from exc
         return self.health_plan(plan_id)
@@ -490,7 +568,9 @@ class Gestao:
     def add_account(self, data: FinanceAccountCreate) -> dict:
         new_id = self._insert(
             "INSERT INTO finance_accounts (name, clinic_id) VALUES (?, ?)",
-            (data.name, self.clinic_id), "Já existe uma conta com este nome.")
+            (data.name, self.clinic_id),
+            "Já existe uma conta com este nome.",
+        )
         return next(a for a in self.accounts() if a["id"] == new_id)
 
     # --- lançamentos financeiros
@@ -520,15 +600,24 @@ class Gestao:
         return item
 
     def transaction(self, tx_id: int, today: str) -> dict:
-        row = self.db.one(f"{self._TX_SELECT} WHERE t.id = ? AND t.clinic_id = ?",
-                          (tx_id, self.clinic_id))
+        row = self.db.one(
+            f"{self._TX_SELECT} WHERE t.id = ? AND t.clinic_id = ?", (tx_id, self.clinic_id)
+        )
         if row is None:
             raise NotFoundError("Lançamento não encontrado.")
         return self._tx(row, today)
 
-    def transactions(self, *, start: date, end: date, today: str, kind: str | None = None,
-                     status: str | None = None, account_id: int | None = None,
-                     health_plan_id: int | None = None) -> list[dict]:
+    def transactions(
+        self,
+        *,
+        start: date,
+        end: date,
+        today: str,
+        kind: str | None = None,
+        status: str | None = None,
+        account_id: int | None = None,
+        health_plan_id: int | None = None,
+    ) -> list[dict]:
         # Pago: entra pela data do pagamento. Em aberto: pela data de vencimento.
         where = ["t.clinic_id = ?", "COALESCE(t.paid_on, t.due_date) BETWEEN ? AND ?"]
         params: list = [self.clinic_id, start.isoformat(), end.isoformat()]
@@ -547,7 +636,9 @@ class Gestao:
             params.append(health_plan_id)
         rows = self.db.all(
             f"{self._TX_SELECT} WHERE {' AND '.join(where)} "
-            "ORDER BY COALESCE(t.paid_on, t.due_date), t.id", params)
+            "ORDER BY COALESCE(t.paid_on, t.due_date), t.id",
+            params,
+        )
         return [self._tx(r, today) for r in rows]
 
     def _check_links(self, *, account_id=None, doctor_id=None, patient_id=None) -> None:
@@ -556,16 +647,27 @@ class Gestao:
         self._require_in_clinic("patients", patient_id, "Paciente não encontrado.")
 
     def add_transaction(self, data: TransactionCreate, today: str) -> dict:
-        self._check_links(account_id=data.account_id, doctor_id=data.doctor_id,
-                          patient_id=data.patient_id)
+        self._check_links(
+            account_id=data.account_id, doctor_id=data.doctor_id, patient_id=data.patient_id
+        )
         tx_id = self.db.insert(
             """INSERT INTO finance_transactions (clinic_id, kind, description, category,
                    amount_cents, due_date, paid_on, payment_method, account_id, doctor_id,
                    patient_id)
                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-            (self.clinic_id, data.kind, data.description, data.category, data.amount_cents,
-             data.due_date.isoformat(), _iso(data.paid_on), data.payment_method,
-             data.account_id, data.doctor_id, data.patient_id),
+            (
+                self.clinic_id,
+                data.kind,
+                data.description,
+                data.category,
+                data.amount_cents,
+                data.due_date.isoformat(),
+                _iso(data.paid_on),
+                data.payment_method,
+                data.account_id,
+                data.doctor_id,
+                data.patient_id,
+            ),
         )
         return self.transaction(tx_id, today)
 
@@ -578,7 +680,8 @@ class Gestao:
             sets = ", ".join(f"{name} = ?" for name in changes)
             self.db.execute(
                 f"UPDATE finance_transactions SET {sets} WHERE id = ? AND clinic_id = ?",
-                (*changes.values(), tx_id, self.clinic_id))
+                (*changes.values(), tx_id, self.clinic_id),
+            )
         return self.transaction(tx_id, today)
 
     def pay_transaction(self, tx_id: int, data: TransactionPay, today: str) -> dict:
@@ -589,25 +692,28 @@ class Gestao:
         self.db.execute(
             """UPDATE finance_transactions SET paid_on = ?, account_id = COALESCE(?, account_id),
                payment_method = COALESCE(?, payment_method) WHERE id = ? AND clinic_id = ?""",
-            (data.paid_on.isoformat(), data.account_id, data.payment_method, tx_id,
-             self.clinic_id))
+            (data.paid_on.isoformat(), data.account_id, data.payment_method, tx_id, self.clinic_id),
+        )
         return self.transaction(tx_id, today)
 
     def unpay_transaction(self, tx_id: int, today: str) -> dict:
         self.transaction(tx_id, today)
-        self.db.execute("UPDATE finance_transactions SET paid_on = NULL "
-                        "WHERE id = ? AND clinic_id = ?", (tx_id, self.clinic_id))
+        self.db.execute(
+            "UPDATE finance_transactions SET paid_on = NULL " "WHERE id = ? AND clinic_id = ?",
+            (tx_id, self.clinic_id),
+        )
         return self.transaction(tx_id, today)
 
     def delete_transaction(self, tx_id: int, today: str) -> None:
         tx = self.transaction(tx_id, today)
         if tx["paid_on"]:
             raise ConflictError("Desfaça o pagamento antes de excluir o lançamento.")
-        self.db.execute("DELETE FROM finance_transactions WHERE id = ? AND clinic_id = ?",
-                        (tx_id, self.clinic_id))
+        self.db.execute(
+            "DELETE FROM finance_transactions WHERE id = ? AND clinic_id = ?",
+            (tx_id, self.clinic_id),
+        )
 
-    def charge_appointment(self, appointment_id: int, data: AppointmentCharge,
-                           today: str) -> dict:
+    def charge_appointment(self, appointment_id: int, data: AppointmentCharge, today: str) -> dict:
         """Cria a conta a receber de uma consulta (uma por consulta)."""
         appointment = self.require_appointment(appointment_id)
         if appointment["status"] == "cancelled":
@@ -626,11 +732,23 @@ class Gestao:
                    patient_id, appointment_id, procedure_id, health_plan_id, plan_card,
                    plan_guide)
                VALUES (?, 'income', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-            (self.clinic_id, description, "Convênio" if plan else "Consultas particulares",
-             amount, appointment["start_at"][:10], _iso(data.paid_on), method,
-             data.account_id, appointment["doctor_id"], appointment["patient_id"],
-             appointment_id, procedure["id"], plan["id"] if plan else None, data.plan_card,
-             data.plan_guide),
+            (
+                self.clinic_id,
+                description,
+                "Convênio" if plan else "Consultas particulares",
+                amount,
+                appointment["start_at"][:10],
+                _iso(data.paid_on),
+                method,
+                data.account_id,
+                appointment["doctor_id"],
+                appointment["patient_id"],
+                appointment_id,
+                procedure["id"],
+                plan["id"] if plan else None,
+                data.plan_card,
+                data.plan_guide,
+            ),
             "Esta consulta já foi faturada.",
         )
         return self.transaction(tx_id, today)
@@ -643,11 +761,14 @@ class Gestao:
         self.db.execute(
             """DELETE FROM finance_transactions
                WHERE appointment_id = ? AND clinic_id = ? AND paid_on IS NULL""",
-            (appointment_id, self.clinic_id))
+            (appointment_id, self.clinic_id),
+        )
 
     def appointment_charge(self, appointment_id: int, today: str) -> dict | None:
-        row = self.db.one(f"{self._TX_SELECT} WHERE t.appointment_id = ? AND t.clinic_id = ?",
-                          (appointment_id, self.clinic_id))
+        row = self.db.one(
+            f"{self._TX_SELECT} WHERE t.appointment_id = ? AND t.clinic_id = ?",
+            (appointment_id, self.clinic_id),
+        )
         return self._tx(row, today) if row else None
 
     def cashflow(self, start: date, end: date, today: str) -> dict:
@@ -655,28 +776,40 @@ class Gestao:
         txs = self.transactions(start=start, end=end, today=today)
         days: dict[str, dict] = {}
         categories: dict[tuple[str, str], int] = {}
-        totals = {"income_paid": 0, "expense_paid": 0, "income_open": 0, "expense_open": 0,
-                  "overdue_income": 0, "overdue_expense": 0}
+        totals = {
+            "income_paid": 0,
+            "expense_paid": 0,
+            "income_open": 0,
+            "expense_open": 0,
+            "overdue_income": 0,
+            "overdue_expense": 0,
+        }
         for tx in txs:
             paid = tx["status"] == "paid"
             key = f"{tx['kind']}_{'paid' if paid else 'open'}"
             totals[key] += tx["amount_cents"]
             if tx["status"] == "overdue":
                 totals[f"overdue_{tx['kind']}"] += tx["amount_cents"]
-            day = days.setdefault(tx["paid_on"] or tx["due_date"],
-                                  {"income_cents": 0, "expense_cents": 0})
+            day = days.setdefault(
+                tx["paid_on"] or tx["due_date"], {"income_cents": 0, "expense_cents": 0}
+            )
             day[f"{tx['kind']}_cents"] += tx["amount_cents"]
             if paid:
                 cat = (tx["kind"], tx["category"])
                 categories[cat] = categories.get(cat, 0) + tx["amount_cents"]
         totals["balance_paid"] = totals["income_paid"] - totals["expense_paid"]
-        totals["balance_forecast"] = (totals["balance_paid"] + totals["income_open"]
-                                      - totals["expense_open"])
+        totals["balance_forecast"] = (
+            totals["balance_paid"] + totals["income_open"] - totals["expense_open"]
+        )
         return {
-            "start": start.isoformat(), "end": end.isoformat(), "totals": totals,
+            "start": start.isoformat(),
+            "end": end.isoformat(),
+            "totals": totals,
             "days": [{"date": d, **v} for d, v in sorted(days.items())],
-            "categories": [{"kind": k, "category": c, "amount_cents": v}
-                           for (k, c), v in sorted(categories.items(), key=lambda i: -i[1])],
+            "categories": [
+                {"kind": k, "category": c, "amount_cents": v}
+                for (k, c), v in sorted(categories.items(), key=lambda i: -i[1])
+            ],
             "accounts": self.accounts(),
         }
 
@@ -689,7 +822,8 @@ class Gestao:
                FROM payout_rules r JOIN doctors d ON d.id = r.doctor_id
                LEFT JOIN procedures p ON p.id = r.procedure_id
                WHERE r.clinic_id = ? ORDER BY d.name, p.name""",
-            (self.clinic_id,))
+            (self.clinic_id,),
+        )
         return [dict(r) for r in rows]
 
     def set_payout_rule(self, data: PayoutRuleSet) -> list[dict]:
@@ -700,37 +834,55 @@ class Gestao:
         params = (data.doctor_id, data.procedure_id) if data.procedure_id else (data.doctor_id,)
         self.db.execute(
             f"DELETE FROM payout_rules WHERE clinic_id = ? AND doctor_id = ? AND {proc_clause}",
-            (self.clinic_id, *params))
+            (self.clinic_id, *params),
+        )
         self.db.execute(
             "INSERT INTO payout_rules (clinic_id, doctor_id, procedure_id, percent) "
             "VALUES (?, ?, ?, ?)",
-            (self.clinic_id, data.doctor_id, data.procedure_id, data.percent))
+            (self.clinic_id, data.doctor_id, data.procedure_id, data.percent),
+        )
         return self.payout_rules()
 
     def delete_payout_rule(self, rule_id: int) -> None:
-        self.db.execute("DELETE FROM payout_rules WHERE id = ? AND clinic_id = ?",
-                        (rule_id, self.clinic_id))
+        self.db.execute(
+            "DELETE FROM payout_rules WHERE id = ? AND clinic_id = ?", (rule_id, self.clinic_id)
+        )
 
     def payouts(self, start: date, end: date, today: str) -> list[dict]:
         """Repasse de cada médico sobre o que foi RECEBIDO no período."""
         rules = {(r["doctor_id"], r["procedure_id"]): r["percent"] for r in self.payout_rules()}
         report: dict[int, dict] = {}
-        for tx in self.transactions(start=start, end=end, today=today, kind="income",
-                                    status="paid"):
+        for tx in self.transactions(
+            start=start, end=end, today=today, kind="income", status="paid"
+        ):
             if not tx["doctor_id"]:
                 continue
-            percent = rules.get((tx["doctor_id"], tx["procedure_id"]),
-                                rules.get((tx["doctor_id"], None), 0))
+            percent = rules.get(
+                (tx["doctor_id"], tx["procedure_id"]), rules.get((tx["doctor_id"], None), 0)
+            )
             share = round(tx["amount_cents"] * percent / 100)
-            doc = report.setdefault(tx["doctor_id"], {
-                "doctor_id": tx["doctor_id"], "doctor_name": tx["doctor_name"],
-                "received_cents": 0, "payout_cents": 0, "items": []})
+            doc = report.setdefault(
+                tx["doctor_id"],
+                {
+                    "doctor_id": tx["doctor_id"],
+                    "doctor_name": tx["doctor_name"],
+                    "received_cents": 0,
+                    "payout_cents": 0,
+                    "items": [],
+                },
+            )
             doc["received_cents"] += tx["amount_cents"]
             doc["payout_cents"] += share
-            doc["items"].append({
-                "transaction_id": tx["id"], "date": tx["paid_on"],
-                "description": tx["description"], "amount_cents": tx["amount_cents"],
-                "percent": percent, "payout_cents": share})
+            doc["items"].append(
+                {
+                    "transaction_id": tx["id"],
+                    "date": tx["paid_on"],
+                    "description": tx["description"],
+                    "amount_cents": tx["amount_cents"],
+                    "percent": percent,
+                    "payout_cents": share,
+                }
+            )
         return sorted(report.values(), key=lambda d: d["doctor_name"])
 
     # --- estoque
@@ -738,13 +890,20 @@ class Gestao:
     def stock_items(self) -> list[dict]:
         rows = self.db.all(
             "SELECT id, name, unit, quantity, min_quantity, active FROM stock_items "
-            "WHERE clinic_id = ? ORDER BY active DESC, name", (self.clinic_id,))
-        return [_bools({**dict(r), "low": r["quantity"] <= r["min_quantity"]}, "active")
-                for r in rows]
+            "WHERE clinic_id = ? ORDER BY active DESC, name",
+            (self.clinic_id,),
+        )
+        return [
+            _bools({**dict(r), "low": r["quantity"] <= r["min_quantity"]}, "active") for r in rows
+        ]
 
     def stock_item(self, item_id: int) -> dict:
-        item = self._get("stock_items", "id, name, unit, quantity, min_quantity, active",
-                         item_id, "Item de estoque não encontrado.")
+        item = self._get(
+            "stock_items",
+            "id, name, unit, quantity, min_quantity, active",
+            item_id,
+            "Item de estoque não encontrado.",
+        )
         item["low"] = item["quantity"] <= item["min_quantity"]
         return item
 
@@ -752,7 +911,8 @@ class Gestao:
         new_id = self._insert(
             "INSERT INTO stock_items (clinic_id, name, unit, min_quantity) VALUES (?, ?, ?, ?)",
             (self.clinic_id, data.name, data.unit, data.min_quantity),
-            "Já existe um item com este nome.")
+            "Já existe um item com este nome.",
+        )
         return self.stock_item(new_id)
 
     def update_stock_item(self, item_id: int, data: StockItemUpdate) -> dict:
@@ -763,26 +923,31 @@ class Gestao:
         if changes:
             sets = ", ".join(f"{name} = ?" for name in changes)
             try:
-                self.db.execute(f"UPDATE stock_items SET {sets} WHERE id = ? AND clinic_id = ?",
-                                (*changes.values(), item_id, self.clinic_id))
+                self.db.execute(
+                    f"UPDATE stock_items SET {sets} WHERE id = ? AND clinic_id = ?",
+                    (*changes.values(), item_id, self.clinic_id),
+                )
             except self.db.integrity_errors as exc:
                 raise ConflictError("Já existe um item com este nome.") from exc
         return self.stock_item(item_id)
 
-    def move_stock(self, item_id: int, data: StockMovementCreate, user_id: int,
-                   now: str) -> dict:
+    def move_stock(self, item_id: int, data: StockMovementCreate, user_id: int, now: str) -> dict:
         with self.db.transaction(lock_keys=(f"stock:{item_id}",)):
             item = self.stock_item(item_id)
             if item["quantity"] + data.delta < 0:
                 raise BusinessRuleError(
                     f"Estoque insuficiente: há {item['quantity']} {item['unit']} de "
-                    f"{item['name']}.")
-            self.db.execute("UPDATE stock_items SET quantity = quantity + ? "
-                            "WHERE id = ? AND clinic_id = ?", (data.delta, item_id, self.clinic_id))
+                    f"{item['name']}."
+                )
+            self.db.execute(
+                "UPDATE stock_items SET quantity = quantity + ? " "WHERE id = ? AND clinic_id = ?",
+                (data.delta, item_id, self.clinic_id),
+            )
             self.db.execute(
                 "INSERT INTO stock_movements (clinic_id, item_id, delta, reason, created_by, "
                 "created_at) VALUES (?, ?, ?, ?, ?, ?)",
-                (self.clinic_id, item_id, data.delta, data.reason, user_id, now))
+                (self.clinic_id, item_id, data.delta, data.reason, user_id, now),
+            )
         return self.stock_item(item_id)
 
     def stock_movements(self, item_id: int) -> list[dict]:
@@ -791,21 +956,29 @@ class Gestao:
             """SELECT m.id, m.delta, m.reason, m.created_at, u.full_name AS author
                FROM stock_movements m JOIN users u ON u.id = m.created_by
                WHERE m.item_id = ? AND m.clinic_id = ? ORDER BY m.created_at DESC, m.id DESC
-               LIMIT 200""", (item_id, self.clinic_id))
+               LIMIT 200""",
+            (item_id, self.clinic_id),
+        )
         return [dict(r) for r in rows]
 
     # --- relatórios de gestão
 
     def overview(self, start: date, end: date, today: str) -> dict:
         start_s, end_s = start.isoformat(), f"{end.isoformat()}T23:59:59"
-        by_status = {r["status"]: r["total"] for r in self.db.all(
-            "SELECT status, COUNT(*) AS total FROM appointments WHERE clinic_id = ? "
-            "AND start_at BETWEEN ? AND ? GROUP BY status", (self.clinic_id, start_s, end_s))}
+        by_status = {
+            r["status"]: r["total"]
+            for r in self.db.all(
+                "SELECT status, COUNT(*) AS total FROM appointments WHERE clinic_id = ? "
+                "AND start_at BETWEEN ? AND ? GROUP BY status",
+                (self.clinic_id, start_s, end_s),
+            )
+        }
         # Agendadas cujo horário já passou e ninguém concluiu: provável falta.
         missed = self.db.one(
             "SELECT COUNT(*) AS total FROM appointments WHERE clinic_id = ? AND status = "
             "'scheduled' AND start_at BETWEEN ? AND ? AND start_at < ?",
-            (self.clinic_id, start_s, end_s, today))["total"]
+            (self.clinic_id, start_s, end_s, today),
+        )["total"]
         doctors = self.db.all(
             """SELECT d.id, d.name,
                       SUM(CASE WHEN a.status = 'completed' THEN 1 ELSE 0 END) AS completed,
@@ -814,11 +987,13 @@ class Gestao:
                FROM doctors d LEFT JOIN appointments a ON a.doctor_id = d.id
                     AND a.start_at BETWEEN ? AND ?
                WHERE d.clinic_id = ? AND d.active = 1 GROUP BY d.id, d.name ORDER BY d.name""",
-            (start_s, end_s, self.clinic_id))
+            (start_s, end_s, self.clinic_id),
+        )
         revenue = {}
         by_plan: dict[str, int] = {}
-        for tx in self.transactions(start=start, end=end, today=today, kind="income",
-                                    status="paid"):
+        for tx in self.transactions(
+            start=start, end=end, today=today, kind="income", status="paid"
+        ):
             if tx["doctor_id"]:
                 revenue[tx["doctor_id"]] = revenue.get(tx["doctor_id"], 0) + tx["amount_cents"]
             plan = tx["health_plan_name"] or "Particular"
@@ -827,12 +1002,15 @@ class Gestao:
             """SELECT COUNT(*) AS total FROM (
                    SELECT patient_id, MIN(start_at) AS first FROM appointments
                    WHERE clinic_id = ? AND status <> 'cancelled' GROUP BY patient_id) f
-               WHERE f.first BETWEEN ? AND ?""", (self.clinic_id, start_s, end_s))["total"]
+               WHERE f.first BETWEEN ? AND ?""",
+            (self.clinic_id, start_s, end_s),
+        )["total"]
         total = sum(by_status.values())
         cash = self.cashflow(start, end, today)["totals"]
         low_stock = [i for i in self.stock_items() if i["active"] and i["low"]]
         return {
-            "start": start.isoformat(), "end": end.isoformat(),
+            "start": start.isoformat(),
+            "end": end.isoformat(),
             "appointments": {
                 "total": total,
                 "scheduled": by_status.get("scheduled", 0),
@@ -840,15 +1018,24 @@ class Gestao:
                 "cancelled": by_status.get("cancelled", 0),
                 "missed": missed,
                 "cancel_rate": round(100 * by_status.get("cancelled", 0) / total, 1)
-                if total else 0,
+                if total
+                else 0,
             },
             "new_patients": new_patients,
             "finance": cash,
-            "doctors": [{**dict(d), "completed": d["completed"] or 0,
-                         "cancelled": d["cancelled"] or 0,
-                         "revenue_cents": revenue.get(d["id"], 0)} for d in doctors],
-            "revenue_by_plan": [{"name": k, "amount_cents": v}
-                                for k, v in sorted(by_plan.items(), key=lambda i: -i[1])],
+            "doctors": [
+                {
+                    **dict(d),
+                    "completed": d["completed"] or 0,
+                    "cancelled": d["cancelled"] or 0,
+                    "revenue_cents": revenue.get(d["id"], 0),
+                }
+                for d in doctors
+            ],
+            "revenue_by_plan": [
+                {"name": k, "amount_cents": v}
+                for k, v in sorted(by_plan.items(), key=lambda i: -i[1])
+            ],
             "low_stock": low_stock,
         }
 
@@ -863,7 +1050,13 @@ class Gestao:
                 WHERE t.clinic_id = ? AND t.health_plan_id = ?
                   AND a.start_at BETWEEN ? AND ?
                 ORDER BY a.start_at""",
-            (self.clinic_id, plan_id, start.isoformat(), f"{end.isoformat()}T23:59:59"))
+            (self.clinic_id, plan_id, start.isoformat(), f"{end.isoformat()}T23:59:59"),
+        )
         guides = [self._tx(r, today) for r in rows]
-        return {"health_plan": plan, "start": start.isoformat(), "end": end.isoformat(),
-                "total_cents": sum(g["amount_cents"] for g in guides), "guides": guides}
+        return {
+            "health_plan": plan,
+            "start": start.isoformat(),
+            "end": end.isoformat(),
+            "total_cents": sum(g["amount_cents"] for g in guides),
+            "guides": guides,
+        }

@@ -83,8 +83,11 @@ class DoctorRepository(Repository):
                 """UPDATE doctors SET name = ?, specialty = ?, slot_minutes = ?, work_start = ?,
                    work_end = ?, active = 1 WHERE id = ?""",
                 (
-                    data.name, data.specialty, data.slot_minutes,
-                    data.work_start.strftime("%H:%M"), data.work_end.strftime("%H:%M"),
+                    data.name,
+                    data.specialty,
+                    data.slot_minutes,
+                    data.work_start.strftime("%H:%M"),
+                    data.work_end.strftime("%H:%M"),
                     removed["id"],
                 ),
             )
@@ -126,9 +129,7 @@ class DoctorRepository(Repository):
         if specialty:
             where.append("specialty LIKE ?")
             params.append(f"%{specialty}%")
-        return self._page(
-            "SELECT * FROM doctors", where, params, Doctor, "name", limit, offset
-        )
+        return self._page("SELECT * FROM doctors", where, params, Doctor, "name", limit, offset)
 
 
 class PatientRepository(Repository):
@@ -150,8 +151,7 @@ class PatientRepository(Repository):
     def update(self, patient_id: int, changes: dict) -> Patient:
         columns = [name for name in self._EDITABLE if name in changes]
         values = [
-            changes[name].isoformat() if name == "birth_date" else changes[name]
-            for name in columns
+            changes[name].isoformat() if name == "birth_date" else changes[name] for name in columns
         ]
         assignments = ", ".join(f"{name} = ?" for name in columns)
         try:
@@ -167,9 +167,7 @@ class PatientRepository(Repository):
         if search:
             where.append("(name LIKE ? OR cpf LIKE ?)")
             params.extend([f"%{search}%", f"%{search}%"])
-        return self._page(
-            "SELECT * FROM patients", where, params, Patient, "name", limit, offset
-        )
+        return self._page("SELECT * FROM patients", where, params, Patient, "name", limit, offset)
 
 
 class AppointmentRepository(Repository):
@@ -181,7 +179,12 @@ class AppointmentRepository(Repository):
     """
 
     def create(
-        self, *, doctor_id: int, patient_id: int, start_at: datetime, end_at: datetime,
+        self,
+        *,
+        doctor_id: int,
+        patient_id: int,
+        start_at: datetime,
+        end_at: datetime,
         notes: str | None,
     ) -> int:
         return self._insert(
@@ -196,7 +199,11 @@ class AppointmentRepository(Repository):
         return Appointment.from_row(row) if row else None
 
     def find_overlapping(
-        self, start_at: datetime, end_at: datetime, *, doctor_id: int | None = None,
+        self,
+        start_at: datetime,
+        end_at: datetime,
+        *,
+        doctor_id: int | None = None,
         patient_id: int | None = None,
     ) -> Appointment | None:
         """Busca uma consulta ativa que se sobreponha ao intervalo [start_at, end_at)."""
@@ -233,8 +240,14 @@ class AppointmentRepository(Repository):
         ]
 
     def list(
-        self, *, doctor_id: int | None, patient_id: int | None, day: date | None,
-        status: AppointmentStatus | None, limit: int, offset: int,
+        self,
+        *,
+        doctor_id: int | None,
+        patient_id: int | None,
+        day: date | None,
+        status: AppointmentStatus | None,
+        limit: int,
+        offset: int,
     ) -> Page:
         where, params = [], []
         if doctor_id is not None:
@@ -250,9 +263,7 @@ class AppointmentRepository(Repository):
         if status is not None:
             where.append("a.status = ?")
             params.append(status.value)
-        return self._page(
-            self._SELECT, where, params, Appointment, "start_at", limit, offset
-        )
+        return self._page(self._SELECT, where, params, Appointment, "start_at", limit, offset)
 
     def update_status(self, appointment_id: int, status: AppointmentStatus) -> None:
         self.conn.execute(

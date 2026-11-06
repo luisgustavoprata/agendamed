@@ -27,17 +27,26 @@ class ClientRequestsTest(APITestCase):
 
     def test_same_user_on_two_devices(self):
         phone = self.headers
-        computer = {"Authorization": "Bearer " + self.client.post("/auth/login", json={
-            "email": "recepcao@clinica.com", "password": "senha-forte-123"}).json["access_token"]}
+        computer = {
+            "Authorization": "Bearer "
+            + self.client.post(
+                "/auth/login", json={"email": "recepcao@clinica.com", "password": "senha-forte-123"}
+            ).json["access_token"]
+        }
         for headers in (phone, computer, phone):
             self.assertEqual(self.client.get("/appointments", headers=headers).status_code, 200)
 
     def test_document_before_the_appointment_keeps_the_agenda_free(self):
         appointment = self.booked("2030-01-10T10:00")
-        response = self.client.post(f"/patients/{self.patient['id']}/prescriptions",
-                                    headers=self.headers, json={
-                                        "kind": "exames", "doctor_id": self.doctor["id"],
-                                        "items": [{"name": "Hemograma completo"}]})
+        response = self.client.post(
+            f"/patients/{self.patient['id']}/prescriptions",
+            headers=self.headers,
+            json={
+                "kind": "exames",
+                "doctor_id": self.doctor["id"],
+                "items": [{"name": "Hemograma completo"}],
+            },
+        )
         self.assertEqual(response.status_code, 201, response.json)
         url = f"/appointments/{appointment['id']}"
         self.assertEqual(self.client.get(url, headers=self.headers).json["status"], "scheduled")
@@ -57,30 +66,41 @@ class ClientRequestsTest(APITestCase):
 
     def test_only_completed_can_be_reopened(self):
         appointment = self.booked("2030-01-08T10:00")
-        response = self.client.post(f"/appointments/{appointment['id']}/reopen",
-                                    headers=self.headers)
+        response = self.client.post(
+            f"/appointments/{appointment['id']}/reopen", headers=self.headers
+        )
         self.assertEqual(response.status_code, 409)
 
     def test_medical_report(self):
-        response = self.client.post(f"/patients/{self.patient['id']}/prescriptions",
-                                    headers=self.headers, json={
-                                        "kind": "relatorio", "doctor_id": self.doctor["id"],
-                                        "text": "Paciente em acompanhamento desde 2029."})
+        response = self.client.post(
+            f"/patients/{self.patient['id']}/prescriptions",
+            headers=self.headers,
+            json={
+                "kind": "relatorio",
+                "doctor_id": self.doctor["id"],
+                "text": "Paciente em acompanhamento desde 2029.",
+            },
+        )
         self.assertEqual(response.status_code, 201, response.json)
         self.assertEqual(response.json["kind_label"], "Relatório médico")
 
 
 class CancelledChargeTest(ClientRequestsTest):
     def test_cancelled_appointment_leaves_the_receivables(self):
-        procedure = self.client.post("/procedures", headers=self.headers,
-                                     json={"name": "Consulta", "price_cents": 30000}).json
+        procedure = self.client.post(
+            "/procedures", headers=self.headers, json={"name": "Consulta", "price_cents": 30000}
+        ).json
         appointment = self.booked("2030-01-10T10:00")
-        charge = self.client.post(f"/appointments/{appointment['id']}/charge",
-                                  headers=self.headers, json={"procedure_id": procedure["id"]})
+        charge = self.client.post(
+            f"/appointments/{appointment['id']}/charge",
+            headers=self.headers,
+            json={"procedure_id": procedure["id"]},
+        )
         self.assertEqual(charge.status_code, 201, charge.json)
         self.client.post(f"/appointments/{appointment['id']}/cancel", headers=self.headers)
-        totals = self.client.get("/finance/cashflow?start=2030-01-01&end=2030-01-31",
-                                 headers=self.headers).json["totals"]
+        totals = self.client.get(
+            "/finance/cashflow?start=2030-01-01&end=2030-01-31", headers=self.headers
+        ).json["totals"]
         self.assertEqual(totals["income_open"], 0)
 
 
@@ -103,8 +123,9 @@ class OldDatabaseTest(APITestCase):
         conn.close()
         create_app({**self.app.config, "CLOCK": lambda: self.now})  # roda o ajuste
         conn = sqlite3.connect(db_path)
-        sql = conn.execute(
-            "SELECT sql FROM sqlite_master WHERE name = 'prescriptions'").fetchone()[0]
+        sql = conn.execute("SELECT sql FROM sqlite_master WHERE name = 'prescriptions'").fetchone()[
+            0
+        ]
         self.assertIn("relatorio", sql)
         self.assertEqual(conn.execute("SELECT COUNT(*) FROM prescriptions").fetchone()[0], 1)
         conn.close()

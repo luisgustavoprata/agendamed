@@ -40,9 +40,7 @@ class DoctorsTest(APITestCase):
         self.create_doctor(self.headers, name="Dr. Rafael", specialty="Pediatria", crm="1111/GO")
         self.create_doctor(self.headers, name="Dr. Bruno", specialty="Pediatria", crm="2222/GO")
 
-        response = self.client.get(
-            "/doctors?specialty=pedia&limit=1", headers=self.headers
-        )
+        response = self.client.get("/doctors?specialty=pedia&limit=1", headers=self.headers)
         self.assertEqual(response.json["total"], 2)
         self.assertEqual(len(response.json["items"]), 1)
         self.assertEqual(response.json["items"][0]["name"], "Dr. Bruno")

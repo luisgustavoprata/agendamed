@@ -17,18 +17,20 @@ __version__ = "1.2.0"
 # Política de segurança de conteúdo: scripts, estilos e fontes só do próprio site, e a
 # página não pode ser exibida dentro de iframes de outros sites. A página /docs define a
 # sua própria política, que libera o CDN do Swagger UI.
-CONTENT_SECURITY_POLICY = "; ".join([
-    "default-src 'self'",
-    "script-src 'self'",
-    "style-src 'self' 'unsafe-inline'",
-    "font-src 'self'",
-    "img-src 'self' data:",
-    "connect-src 'self'",
-    "base-uri 'none'",
-    "form-action 'self'",
-    "object-src 'none'",
-    "frame-ancestors 'none'",
-])
+CONTENT_SECURITY_POLICY = "; ".join(
+    [
+        "default-src 'self'",
+        "script-src 'self'",
+        "style-src 'self' 'unsafe-inline'",
+        "font-src 'self'",
+        "img-src 'self' data:",
+        "connect-src 'self'",
+        "base-uri 'none'",
+        "form-action 'self'",
+        "object-src 'none'",
+        "frame-ancestors 'none'",
+    ]
+)
 
 # Recursos do navegador que o site nunca usa ficam bloqueados.
 PERMISSIONS_POLICY = "camera=(), microphone=(), geolocation=()"
@@ -100,9 +102,20 @@ def create_app(config: dict | None = None) -> Flask:
         if request.is_secure:
             # Navegador passa a usar só HTTPS neste domínio por um ano.
             response.headers.setdefault("Strict-Transport-Security", "max-age=31536000")
-        if request.path.startswith(("/auth", "/doctors", "/patients", "/appointments",
-                                    "/prescriptions", "/finance", "/stock", "/reports",
-                                    "/procedures", "/health-plans")):
+        if request.path.startswith(
+            (
+                "/auth",
+                "/doctors",
+                "/patients",
+                "/appointments",
+                "/prescriptions",
+                "/finance",
+                "/stock",
+                "/reports",
+                "/procedures",
+                "/health-plans",
+            )
+        ):
             # Dados de pacientes não devem ficar guardados em cache de navegador ou proxy.
             response.headers.setdefault("Cache-Control", "no-store")
         return response

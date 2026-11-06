@@ -26,18 +26,45 @@ DOCTORS = [
 ]
 
 PATIENTS = [
-    {"name": "Ana Souza", "cpf": "529.982.247-25", "email": "ana@exemplo.com",
-     "birth_date": "1994-03-12", "phone": "(64) 99999-1111"},
-    {"name": "Bruno Lima", "cpf": "526.018.159-06", "email": "bruno@exemplo.com",
-     "birth_date": "1988-11-02"},
-    {"name": "Carla Mendes", "cpf": "083.016.613-05", "email": "carla@exemplo.com",
-     "birth_date": "2015-07-21"},
-    {"name": "Daniel Ferreira", "cpf": "186.091.390-34", "email": "daniel@exemplo.com",
-     "birth_date": "1971-05-30", "phone": "(62) 98888-2222"},
-    {"name": "Elisa Martins", "cpf": "996.030.824-30", "email": "elisa@exemplo.com",
-     "birth_date": "1959-09-14"},
-    {"name": "Felipe Andrade", "cpf": "347.215.908-14", "email": "felipe@exemplo.com",
-     "birth_date": "2001-01-08", "phone": "(64) 97777-3333"},
+    {
+        "name": "Ana Souza",
+        "cpf": "529.982.247-25",
+        "email": "ana@exemplo.com",
+        "birth_date": "1994-03-12",
+        "phone": "(64) 99999-1111",
+    },
+    {
+        "name": "Bruno Lima",
+        "cpf": "526.018.159-06",
+        "email": "bruno@exemplo.com",
+        "birth_date": "1988-11-02",
+    },
+    {
+        "name": "Carla Mendes",
+        "cpf": "083.016.613-05",
+        "email": "carla@exemplo.com",
+        "birth_date": "2015-07-21",
+    },
+    {
+        "name": "Daniel Ferreira",
+        "cpf": "186.091.390-34",
+        "email": "daniel@exemplo.com",
+        "birth_date": "1971-05-30",
+        "phone": "(62) 98888-2222",
+    },
+    {
+        "name": "Elisa Martins",
+        "cpf": "996.030.824-30",
+        "email": "elisa@exemplo.com",
+        "birth_date": "1959-09-14",
+    },
+    {
+        "name": "Felipe Andrade",
+        "cpf": "347.215.908-14",
+        "email": "felipe@exemplo.com",
+        "birth_date": "2001-01-08",
+        "phone": "(64) 97777-3333",
+    },
 ]
 
 # (índice do médico, índice do paciente, horário, observação). Os horários respeitam

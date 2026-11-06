@@ -10,14 +10,16 @@ SWAGGER_CSS_SRI = "sha384-wxLW6kwyHktdDGr6Pv1zgm/VGJh99lfUbzSn6HNHBENZlCN7W602k9
 SWAGGER_JS_SRI = "sha384-wmyclcVGX/WhUkdkATwhaK1X1JtiNrr2EoYJ+diV3vj4v6OC5yCeSu+yW13SYJep"
 
 # Só a página da documentação libera o CDN do Swagger UI; o restante do site não.
-DOCS_CONTENT_SECURITY_POLICY = "; ".join([
-    "default-src 'self'",
-    "script-src 'self' https://cdn.jsdelivr.net",
-    "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net",
-    "img-src 'self' data: https://cdn.jsdelivr.net",
-    "connect-src 'self'",
-    "frame-ancestors 'none'",
-])
+DOCS_CONTENT_SECURITY_POLICY = "; ".join(
+    [
+        "default-src 'self'",
+        "script-src 'self' https://cdn.jsdelivr.net",
+        "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net",
+        "img-src 'self' data: https://cdn.jsdelivr.net",
+        "connect-src 'self'",
+        "frame-ancestors 'none'",
+    ]
+)
 
 SWAGGER_PAGE = f"""<!doctype html>
 <html lang="pt-BR">

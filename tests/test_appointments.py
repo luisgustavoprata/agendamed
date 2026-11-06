@@ -54,7 +54,10 @@ class AppointmentsTest(APITestCase):
 
     def test_patient_cannot_be_in_two_places_at_once(self):
         other_doctor = self.create_doctor(
-            self.headers, name="Dr. Rafael", specialty="Pediatria", crm="654321/GO",
+            self.headers,
+            name="Dr. Rafael",
+            specialty="Pediatria",
+            crm="654321/GO",
             slot_minutes=60,
         )
         self.assertEqual(self._book("2030-01-08T10:00").status_code, 201)
@@ -88,9 +91,7 @@ class AppointmentsTest(APITestCase):
         response = self.client.post(url, headers=self.headers)
         self.assertEqual(response.json["status"], "completed")
 
-        cancel = self.client.post(
-            f"/appointments/{appointment['id']}/cancel", headers=self.headers
-        )
+        cancel = self.client.post(f"/appointments/{appointment['id']}/cancel", headers=self.headers)
         self.assertEqual(cancel.status_code, 409)
 
     def test_availability_hides_booked_and_past_slots(self):

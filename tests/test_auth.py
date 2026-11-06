@@ -56,7 +56,5 @@ class AuthTest(APITestCase):
         )
         for token in (expired, forged, "lixo"):
             with self.subTest(token=token[:12]):
-                response = self.client.get(
-                    "/auth/me", headers={"Authorization": f"Bearer {token}"}
-                )
+                response = self.client.get("/auth/me", headers={"Authorization": f"Bearer {token}"})
                 self.assertEqual(response.status_code, 401)

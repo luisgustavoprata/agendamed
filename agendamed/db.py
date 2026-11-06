@@ -77,9 +77,11 @@ def _allow_medical_report(conn) -> None:
     ).fetchone()
     if row is None or "relatorio" in row["sql"]:
         return
-    new_sql = row["sql"].replace(
-        "'exames')", "'exames', 'relatorio')"
-    ).replace("CREATE TABLE prescriptions", "CREATE TABLE prescriptions_new", 1)
+    new_sql = (
+        row["sql"]
+        .replace("'exames')", "'exames', 'relatorio')")
+        .replace("CREATE TABLE prescriptions", "CREATE TABLE prescriptions_new", 1)
+    )
     conn.executescript(f"""
         BEGIN;
         {new_sql};

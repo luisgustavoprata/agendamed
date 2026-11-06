@@ -56,8 +56,9 @@ def _period() -> tuple[date, date]:
     """Período das telas: ?start=&end= (padrão: o mês atual)."""
     today = now().date()
     start = query_date("start") or today.replace(day=1)
-    end = query_date("end") or (start.replace(day=28) + timedelta(days=4)).replace(day=1) \
-        - timedelta(days=1)
+    end = query_date("end") or (start.replace(day=28) + timedelta(days=4)).replace(
+        day=1
+    ) - timedelta(days=1)
     if end < start:
         raise BadRequestError("A data final deve ser depois da inicial.")
     if (end - start).days > 366:
@@ -87,8 +88,11 @@ def get_record(patient_id: int):
     _auth(*CLINICAL)
     g = _g()
     patient = g.require_patient(patient_id)
-    return {"patient": patient, "summary": g.clinical_summary(patient_id),
-            "entries": g.record_entries(patient_id)}
+    return {
+        "patient": patient,
+        "summary": g.clinical_summary(patient_id),
+        "entries": g.record_entries(patient_id),
+    }
 
 
 @bp.put("/patients/<int:patient_id>/record/summary")
@@ -201,8 +205,14 @@ def list_transactions():
         raise BadRequestError("O parâmetro 'kind' deve ser income ou expense.")
     if status not in (None, "paid", "open"):
         raise BadRequestError("O parâmetro 'status' deve ser paid ou open.")
-    items = _g().transactions(start=start, end=end, today=_today(), kind=kind, status=status,
-                              account_id=query_int("account_id", minimum=1))
+    items = _g().transactions(
+        start=start,
+        end=end,
+        today=_today(),
+        kind=kind,
+        status=status,
+        account_id=query_int("account_id", minimum=1),
+    )
     return {"items": items}
 
 
@@ -281,8 +291,11 @@ def delete_payout_rule(rule_id: int):
 def payouts():
     _auth(*OWNER)
     start, end = _period()
-    return {"start": start.isoformat(), "end": end.isoformat(),
-            "items": _g().payouts(start, end, _today())}
+    return {
+        "start": start.isoformat(),
+        "end": end.isoformat(),
+        "items": _g().payouts(start, end, _today()),
+    }
 
 
 @bp.get("/finance/tiss")
@@ -325,8 +338,7 @@ def stock_movements(item_id: int):
 @bp.post("/stock/items/<int:item_id>/movements")
 def move_stock(item_id: int):
     _auth(*FINANCE)
-    return _g().move_stock(item_id, parse_body(StockMovementCreate), current_user().id,
-                           _now()), 201
+    return _g().move_stock(item_id, parse_body(StockMovementCreate), current_user().id, _now()), 201
 
 
 # ------------------------------------------------------------------ relatórios
