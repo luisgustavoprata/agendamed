@@ -9,13 +9,11 @@ e alguns registros de prontuário e receitas.
 import sqlite3
 from datetime import date, datetime, time, timedelta
 
-from agendamed.gestao import (
-    CLINIC_ID,
+from agendamed.gestao import CLINIC_ID, Gestao, GestaoDb
+from agendamed.gestao.schemas import (
     AppointmentCharge,
     ClinicalSummaryUpdate,
     FinanceAccountCreate,
-    Gestao,
-    GestaoDb,
     HealthPlanCreate,
     PrescriptionCreate,
     ProcedureCreate,

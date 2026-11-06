@@ -7,7 +7,7 @@ toda rota registrada no Flask aparece aqui.
 
 from functools import cache
 
-from agendamed.gestao import REQUEST_MODELS as GESTAO_MODELS
+from agendamed.gestao.schemas import REQUEST_MODELS as GESTAO_MODELS
 
 from agendamed.schemas import (
     AppointmentCreate,

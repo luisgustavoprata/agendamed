@@ -6,7 +6,7 @@ from zoneinfo import ZoneInfo
 from flask import Flask, request
 from werkzeug.middleware.proxy_fix import ProxyFix
 
-from agendamed import db, errors
+from agendamed import cli, db, errors
 from agendamed.accounts import configured_accounts, ensure_accounts
 from agendamed.config import DEFAULT_SECRET_KEY, Config
 from agendamed.ratelimit import LoginRateLimiter
@@ -70,6 +70,7 @@ def create_app(config: dict | None = None) -> Flask:
     )
 
     db.init_app(app)
+    cli.init_app(app)
     errors.register_error_handlers(app)
 
     for blueprint in (auth.bp, doctors.bp, patients.bp, appointments.bp, docs.bp, gestao.bp):

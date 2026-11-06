@@ -5,7 +5,6 @@ from collections.abc import Iterator
 from contextlib import contextmanager
 from pathlib import Path
 
-import click
 from flask import Flask, current_app, g
 
 SCHEMA_PATH = Path(__file__).with_name("schema.sql")
@@ -94,23 +93,5 @@ def _allow_medical_report(conn) -> None:
     """)
 
 
-@click.command("init-db")
-def init_db_command() -> None:
-    """Cria as tabelas do banco de dados."""
-    init_db()
-    click.echo("Banco de dados inicializado.")
-
-
-@click.command("seed")
-def seed_command() -> None:
-    """Popula o banco com dados de demonstração."""
-    from agendamed.seed import seed
-
-    seed(get_db())
-    click.echo("Dados de demonstração criados. Login: admin@agendamed.dev / admin12345")
-
-
 def init_app(app: Flask) -> None:
     app.teardown_appcontext(close_db)
-    app.cli.add_command(init_db_command)
-    app.cli.add_command(seed_command)
