@@ -30,6 +30,7 @@ Caminho de uma requisição: rota (routes/) → serviço ou repositório → ban
 volta como JSON, e a interface em static/ só conversa com o servidor por essa API.
 """
 
+import os
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
@@ -75,6 +76,28 @@ def clinic_clock(timezone: str):
     """Relógio que devolve o horário local da clínica, sem fuso (como os dados do banco)."""
     zone = ZoneInfo(timezone)
     return lambda: datetime.now(zone).replace(tzinfo=None)
+
+
+# Valor de exemplo do .env.example: parece longo, mas também é público.
+EXAMPLE_SECRET_KEY = "troque-por-uma-chave-longa-e-aleatoria"
+
+
+def _check_secret_key(app: Flask) -> None:
+    """Com a chave padrão (que está no código) qualquer pessoa forjaria um login válido.
+
+    Em desenvolvimento (`flask run --debug`) e nos testes, só avisa. Fora disso, não sobe.
+    """
+    key = app.config["SECRET_KEY"]
+    weak = key in (DEFAULT_SECRET_KEY, EXAMPLE_SECRET_KEY) or len(key) < 32
+    if not weak or app.config.get("TESTING"):
+        return
+    if app.debug or os.environ.get("FLASK_DEBUG") == "1":
+        app.logger.warning("SECRET_KEY padrão ou curta. Defina SECRET_KEY antes de publicar.")
+        return
+    raise RuntimeError(
+        "SECRET_KEY ausente, padrão ou com menos de 32 caracteres. Gere uma com: "
+        'python -c "import secrets; print(secrets.token_urlsafe(48))"'
+    )
 
 
 class BoundedIntConverter(IntegerConverter):
@@ -191,8 +214,7 @@ def create_app(config: dict | None = None) -> Flask:
             # demonstração (admin@agendamed.dev): só a equipe entra.
             seed(db.get_db(), demo_login=not app.config["STAFF_ACCOUNTS"])
 
-    # 8. Por último: avisa no log se a SECRET_KEY ainda é a de exemplo.
-    if not app.config.get("TESTING") and app.config["SECRET_KEY"] == DEFAULT_SECRET_KEY:
-        app.logger.warning("SECRET_KEY padrão em uso. Defina a variável de ambiente SECRET_KEY.")
+    # 8. Por último: não sobe em produção com a SECRET_KEY de exemplo ou curta.
+    _check_secret_key(app)
 
     return app

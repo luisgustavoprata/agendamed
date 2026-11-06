@@ -141,3 +141,21 @@ class MalformedInputTest(APITestCase):
         self.assertEqual(response.status_code, 422)
         response = self.book(self.headers, self.doctor["id"], 2**63, "2030-01-08T10:00")
         self.assertEqual(response.status_code, 422)
+
+
+class SecretKeyTest(APITestCase):
+    """O sistema não sobe em produção com a SECRET_KEY de exemplo ou curta."""
+
+    def test_refuses_to_start_with_default_or_short_key(self):
+        from agendamed import EXAMPLE_SECRET_KEY, create_app
+        from agendamed.config import DEFAULT_SECRET_KEY
+
+        for key in (DEFAULT_SECRET_KEY, EXAMPLE_SECRET_KEY, "curta"):
+            with self.subTest(key=key), self.assertRaises(RuntimeError):
+                create_app({"SECRET_KEY": key, "DATABASE": ":memory:"})
+
+    def test_a_long_key_starts_normally(self):
+        from agendamed import create_app
+
+        app = create_app({"SECRET_KEY": "k" * 48, "DATABASE": ":memory:"})
+        self.assertFalse(app.config.get("TESTING"))

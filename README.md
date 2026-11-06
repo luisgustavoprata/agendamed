@@ -168,7 +168,7 @@ python -m venv .venv
 source .venv/bin/activate          # no Windows: .venv\Scripts\activate
 pip install -r requirements-dev.txt
 
-flask --app agendamed seed         # opcional: cria dados de demonstração
+flask --app agendamed --debug seed # opcional: cria dados de demonstração
 flask --app agendamed run --debug  # http://127.0.0.1:5000
 ```
 
@@ -177,10 +177,14 @@ o usuário **admin@agendamed.dev** com a senha **admin12345**, além de três m�
 pacientes e uma agenda de consultas para os próximos dias úteis. Entre na tela de login com
 esse usuário e senha.
 
+O `--debug` é o modo de desenvolvimento: nele o sistema aceita a chave secreta de exemplo e
+só avisa. Fora dele (no servidor, no Docker), o sistema não sobe sem uma `SECRET_KEY` com pelo
+menos 32 caracteres. Para gerar uma: `python -c "import secrets; print(secrets.token_urlsafe(48))"`.
+
 ### Com Docker
 
 ```bash
-cp .env.example .env               # defina uma SECRET_KEY
+cp .env.example .env               # defina uma SECRET_KEY (32+ caracteres)
 docker compose up --build          # http://localhost:8000
 ```
 
