@@ -128,8 +128,11 @@ function loading(text = "Carregando…") {
 /**
  * Tabela de dados. `columns` diz o título de cada coluna e como desenhar a célula a
  * partir de cada linha de `rows`; `empty` é o texto para quando não há linhas.
+ * Colunas vazias (false, null) são ignoradas: assim uma tela pode escrever
+ * `condição && { ... }` para mostrar uma coluna só quando ela se aplica.
  */
-function dataTable({ caption, columns, rows, empty }) {
+function dataTable({ caption, columns: allColumns, rows, empty }) {
+  const columns = allColumns.filter(Boolean);
   const table = h(
     "table",
     { class: "table" },
