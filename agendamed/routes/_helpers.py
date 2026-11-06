@@ -8,7 +8,7 @@ from pydantic import BaseModel
 from agendamed.db import get_db
 from agendamed.errors import BadRequestError, UnauthorizedError
 from agendamed.repositories import UserRepository
-from agendamed.schemas import MAX_ID
+from agendamed.schemas import MAX_DATE, MAX_ID, MIN_DATE
 from agendamed.security import decode_access_token
 
 MAX_PAGE_SIZE = 100
@@ -43,16 +43,19 @@ def query_int(name: str, *, default: int | None = None, minimum: int = 0) -> int
 
 
 def query_date(name: str, *, required: bool = False) -> date | None:
-    """Lê uma data "AAAA-MM-DD" da query string (?nome=2030-01-07)."""
+    """Lê uma data "AAAA-MM-DD" da query string (?nome=2030-01-07), entre 1900 e 2100."""
     raw = request.args.get(name)
     if raw is None:
         if required:
             raise BadRequestError(f"O parâmetro '{name}' é obrigatório (formato AAAA-MM-DD).")
         return None
     try:
-        return date.fromisoformat(raw)
+        value = date.fromisoformat(raw)
     except ValueError as exc:
         raise BadRequestError(f"O parâmetro '{name}' deve estar no formato AAAA-MM-DD.") from exc
+    if not MIN_DATE <= value <= MAX_DATE:
+        raise BadRequestError(f"O parâmetro '{name}' deve ser uma data entre 1900 e 2100.")
+    return value
 
 
 def pagination() -> tuple[int, int]:

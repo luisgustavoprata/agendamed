@@ -1,9 +1,10 @@
 """Esquemas Pydantic que validam os dados recebidos pela API."""
 
-from datetime import date, time
+from datetime import date, datetime, time
 from typing import Annotated
 
 from pydantic import (
+    AfterValidator,
     BaseModel,
     ConfigDict,
     Field,
@@ -20,6 +21,20 @@ Name = Annotated[str, Field(min_length=3, max_length=120)]
 # Sem o limite, um id gigante derrubava a requisição com erro 500.
 MAX_ID = 2**53 - 1
 DbId = Annotated[int, Field(gt=0, le=MAX_ID)]
+
+# Datas aceitas: de 1900 a 2100. Datas como 31/12/9999 estouravam as contas de "dia seguinte"
+# (erro 500). As datas da gestão usam o mesmo intervalo (BoundedDate em gestao/schemas.py).
+MIN_DATE, MAX_DATE = date(1900, 1, 1), date(2100, 12, 31)
+
+
+def _check_datetime(value: datetime) -> datetime:
+    """Validador de BoundedDatetime: recusa horários com data fora de 1900 a 2100."""
+    if not MIN_DATE <= value.date() <= MAX_DATE:
+        raise ValueError("Informe uma data entre 1900 e 2100.")
+    return value
+
+
+BoundedDatetime = Annotated[NaiveDatetime, AfterValidator(_check_datetime)]
 
 
 class InputSchema(BaseModel):
@@ -173,5 +188,5 @@ class AppointmentCreate(InputSchema):
 
     doctor_id: DbId
     patient_id: DbId
-    start_at: NaiveDatetime = Field(description="Horário local da clínica, sem fuso.")
+    start_at: BoundedDatetime = Field(description="Horário local da clínica, sem fuso.")
     notes: str | None = Field(default=None, max_length=500)

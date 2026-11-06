@@ -143,6 +143,54 @@ class MalformedInputTest(APITestCase):
         self.assertEqual(response.status_code, 422)
 
 
+class AbsurdDateTest(APITestCase):
+    """Datas fora do intervalo aceito (de 1900 a 2100) recebem 400/422, nunca erro 500."""
+
+    def setUp(self):
+        super().setUp()
+        self.headers = self.auth_headers()
+        self.doctor = self.create_doctor(self.headers)
+        self.patient = self.create_patient(self.headers)
+
+    def test_absurd_dates_in_the_query_string_are_rejected(self):
+        for path in (
+            f"/doctors/{self.doctor['id']}/availability?date=9999-12-31",
+            "/appointments?date=9999-12-31",
+            "/appointments?date=1899-12-31",
+            "/finance/transactions?start=9999-12-01",
+            "/finance/cashflow?start=9999-12-01",
+            "/finance/payouts?start=9999-12-01",
+            "/finance/tiss?health_plan_id=1&start=9999-12-01",
+            "/reports/overview?start=9999-12-01",
+        ):
+            with self.subTest(path=path):
+                response = self.client.get(path, headers=self.headers)
+                self.assertEqual(response.status_code, 400)
+        response = self.client.get("/appointments?date=9999-12-31", headers=self.headers)
+        self.assertEqual(
+            response.json["detail"], "O parâmetro 'date' deve ser uma data entre 1900 e 2100."
+        )
+
+    def test_absurd_appointment_times_are_rejected(self):
+        for start_at in ("9999-12-31T23:30", "2101-01-03T10:00"):
+            with self.subTest(start_at=start_at):
+                response = self.book(self.headers, self.doctor["id"], self.patient["id"], start_at)
+                self.assertEqual(response.status_code, 422)
+                self.assertEqual(
+                    response.json["errors"][0]["message"], "Informe uma data entre 1900 e 2100."
+                )
+
+    def test_dates_at_the_edges_of_the_range_still_work(self):
+        for day in ("1900-01-01", "2100-12-31"):
+            with self.subTest(day=day):
+                response = self.client.get(f"/appointments?date={day}", headers=self.headers)
+                self.assertEqual(response.status_code, 200)
+        response = self.book(
+            self.headers, self.doctor["id"], self.patient["id"], "2100-12-31T10:00"
+        )
+        self.assertEqual(response.status_code, 201)
+
+
 class SecretKeyTest(APITestCase):
     """O sistema não sobe em produção com a SECRET_KEY de exemplo ou curta."""
 
