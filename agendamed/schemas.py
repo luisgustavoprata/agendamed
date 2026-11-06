@@ -8,7 +8,6 @@ from pydantic import (
     ConfigDict,
     Field,
     NaiveDatetime,
-    PositiveInt,
     field_validator,
     model_validator,
 )
@@ -16,6 +15,11 @@ from pydantic import (
 from agendamed.validators import EMAIL_PATTERN, is_valid_cpf, only_digits
 
 Name = Annotated[str, Field(min_length=3, max_length=120)]
+
+# Identificadores: inteiros positivos que cabem no banco (e em números do JavaScript).
+# Sem o limite, um id gigante derrubava a requisição com erro 500.
+MAX_ID = 2**53 - 1
+DbId = Annotated[int, Field(gt=0, le=MAX_ID)]
 
 
 class InputSchema(BaseModel):
@@ -167,7 +171,7 @@ class PatientUpdate(InputSchema):
 class AppointmentCreate(InputSchema):
     """Marcação de consulta: médico, paciente e horário."""
 
-    doctor_id: PositiveInt
-    patient_id: PositiveInt
+    doctor_id: DbId
+    patient_id: DbId
     start_at: NaiveDatetime = Field(description="Horário local da clínica, sem fuso.")
     notes: str | None = Field(default=None, max_length=500)

@@ -101,3 +101,43 @@ class SecurityHeadersTest(APITestCase):
                 self.assertEqual(response.headers["X-Frame-Options"], "DENY")
                 self.assertIn("frame-ancestors 'none'", response.headers["Content-Security-Policy"])
                 response.close()
+
+
+class MalformedInputTest(APITestCase):
+    """Números gigantes recebem 400/404/422, nunca erro 500."""
+
+    def setUp(self):
+        super().setUp()
+        self.headers = self.auth_headers()
+        self.doctor = self.create_doctor(self.headers)
+        self.patient = self.create_patient(self.headers)
+
+    def test_huge_ids_in_the_address_are_not_found(self):
+        huge = "99999999999999999999"
+        for path in (
+            f"/doctors/{huge}",
+            f"/patients/{huge}",
+            f"/appointments/{huge}",
+            f"/patients/{huge}/record",
+            f"/prescriptions/{huge}",
+        ):
+            with self.subTest(path=path):
+                response = self.client.get(path, headers=self.headers)
+                self.assertEqual(response.status_code, 404)
+
+    def test_huge_numbers_in_the_query_string_are_rejected(self):
+        huge = "99999999999999999999"
+        for path in (
+            f"/patients?offset={huge}",
+            f"/appointments?patient_id={huge}",
+            f"/finance/transactions?account_id={huge}",
+        ):
+            with self.subTest(path=path):
+                response = self.client.get(path, headers=self.headers)
+                self.assertEqual(response.status_code, 400)
+
+    def test_huge_ids_in_the_body_are_rejected(self):
+        response = self.book(self.headers, 2**63, self.patient["id"], "2030-01-08T10:00")
+        self.assertEqual(response.status_code, 422)
+        response = self.book(self.headers, self.doctor["id"], 2**63, "2030-01-08T10:00")
+        self.assertEqual(response.status_code, 422)

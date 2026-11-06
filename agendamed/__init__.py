@@ -35,12 +35,14 @@ from zoneinfo import ZoneInfo
 
 from flask import Flask, request
 from werkzeug.middleware.proxy_fix import ProxyFix
+from werkzeug.routing import IntegerConverter
 
 from agendamed import cli, db, errors
 from agendamed.accounts import configured_accounts, ensure_accounts
 from agendamed.config import DEFAULT_SECRET_KEY, Config
 from agendamed.ratelimit import LoginRateLimiter
 from agendamed.routes import appointments, auth, docs, doctors, gestao, patients
+from agendamed.schemas import MAX_ID
 
 __version__ = "1.2.0"
 
@@ -75,6 +77,15 @@ def clinic_clock(timezone: str):
     return lambda: datetime.now(zone).replace(tzinfo=None)
 
 
+class BoundedIntConverter(IntegerConverter):
+    """`<int:id>` com teto: ids gigantes viram 404 em vez de estourar o banco (erro 500)."""
+
+    def __init__(self, map, *args, **kwargs):
+        """Usa o teto MAX_ID quando a rota não informa outro máximo."""
+        kwargs.setdefault("max", MAX_ID)
+        super().__init__(map, *args, **kwargs)
+
+
 def create_app(config: dict | None = None) -> Flask:
     """Cria e configura a aplicação (padrão *application factory*).
 
@@ -83,6 +94,7 @@ def create_app(config: dict | None = None) -> Flask:
     """
     # 1. Configuração: valores de config.py, o relógio da clínica e o que vier em `config`.
     app = Flask(__name__)
+    app.url_map.converters["int"] = BoundedIntConverter
     app.config.from_object(Config)
     app.config["CLOCK"] = clinic_clock(app.config["CLINIC_TIMEZONE"])
     app.config["MAX_CONTENT_LENGTH"] = MAX_CONTENT_LENGTH

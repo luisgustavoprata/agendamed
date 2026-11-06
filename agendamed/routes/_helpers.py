@@ -8,6 +8,7 @@ from pydantic import BaseModel
 from agendamed.db import get_db
 from agendamed.errors import BadRequestError, UnauthorizedError
 from agendamed.repositories import UserRepository
+from agendamed.schemas import MAX_ID
 from agendamed.security import decode_access_token
 
 MAX_PAGE_SIZE = 100
@@ -36,6 +37,8 @@ def query_int(name: str, *, default: int | None = None, minimum: int = 0) -> int
         raise BadRequestError(f"O parâmetro '{name}' deve ser um número inteiro.") from exc
     if value < minimum:
         raise BadRequestError(f"O parâmetro '{name}' deve ser maior ou igual a {minimum}.")
+    if value > MAX_ID:
+        raise BadRequestError(f"O parâmetro '{name}' é grande demais.")
     return value
 
 
