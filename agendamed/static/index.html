@@ -1,4 +1,8 @@
 <!doctype html>
+<!--
+  AgendaMed — página da interface da Clínica Vida (endereço /).
+  Ela só tem a moldura vazia: o JavaScript monta as telas dentro de <div id="root">.
+-->
 <html lang="pt-BR">
 <head>
   <meta charset="utf-8">
@@ -7,15 +11,50 @@
   <meta name="description" content="Agenda de consultas da clínica.">
   <meta name="theme-color" content="#0e2a47">
   <link rel="icon" href="/static/icon.svg" type="image/svg+xml">
+  <!-- Fontes do texto principal e dos títulos, baixadas antes para a tela não piscar. -->
   <link rel="preload" href="/static/fonts/plex-sans-400.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="/static/fonts/source-serif-600.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="/static/styles.css">
 </head>
 <body>
+  <!-- Onde as telas são desenhadas. -->
   <div id="root" aria-live="polite"></div>
+  <!-- Onde aparecem os avisos rápidos ("Consulta marcada.", erros...). -->
   <div id="toasts" class="toasts" aria-live="polite"></div>
   <noscript>O AgendaMed precisa de JavaScript ativado para funcionar.</noscript>
-  <script src="/static/gestao.js" defer></script>
+
+  <!--
+    Scripts da interface. A ORDEM IMPORTA: todos compartilham as mesmas variáveis globais,
+    e cada arquivo pode usar o que foi declarado nos anteriores. "defer" baixa todos ao
+    mesmo tempo e roda na ordem abaixo, depois que a página carregou.
+    Ao criar um arquivo novo, inclua-o aqui antes do app.js (que é sempre o último).
+  -->
+  <!-- Base: utilitários, dias úteis, marca da clínica, API, sessão e componentes -->
+  <script src="/static/js/base/utilitarios.js" defer></script>
+  <script src="/static/js/base/dias.js" defer></script>
+  <script src="/static/js/base/marca.js" defer></script>
+  <script src="/static/js/base/api.js" defer></script>
+  <script src="/static/js/base/sessao.js" defer></script>
+  <script src="/static/js/base/componentes.js" defer></script>
+  <!-- Janelas de cadastro -->
+  <script src="/static/js/dialogos/medico.js" defer></script>
+  <script src="/static/js/dialogos/paciente.js" defer></script>
+  <!-- Telas (uma por arquivo) -->
+  <script src="/static/js/telas/entrada.js" defer></script>
+  <script src="/static/js/telas/agendar.js" defer></script>
+  <script src="/static/js/telas/agenda.js" defer></script>
+  <script src="/static/js/telas/consultas.js" defer></script>
+  <script src="/static/js/telas/medicos.js" defer></script>
+  <script src="/static/js/telas/pacientes.js" defer></script>
+  <!-- Gestão: prontuário, prescrições, financeiro, estoque e painel -->
+  <script src="/static/js/gestao/utilitarios.js" defer></script>
+  <script src="/static/js/gestao/impressao.js" defer></script>
+  <script src="/static/js/gestao/prontuario.js" defer></script>
+  <script src="/static/js/gestao/faturar.js" defer></script>
+  <script src="/static/js/gestao/financeiro.js" defer></script>
+  <script src="/static/js/gestao/estoque.js" defer></script>
+  <script src="/static/js/gestao/painel.js" defer></script>
+  <!-- Menu, troca de telas e inicialização: sempre por último -->
   <script src="/static/app.js" defer></script>
 </body>
 </html>
