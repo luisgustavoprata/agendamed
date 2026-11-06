@@ -7,7 +7,7 @@
 
    Sumário, na ordem do arquivo:
      Fontes · Cores e medidas · Base · Botões e campos · Login · Estrutura do app ·
-     Agenda · Tabelas · Diálogo · Avisos · Login de demonstração · Agendar ·
+     Agenda · Tabelas · Diálogo · Avisos · Botão grande · Agendar ·
      Responsivo (celular) · Gestão · Entrada da Clínica Vida · Esqueci minha senha
 
    A ORDEM DAS REGRAS IMPORTA: quando duas regras de mesmo peso valem para o mesmo
@@ -482,16 +482,6 @@ select.input {
   border-bottom-color: var(--navy);
 }
 
-.demo-note {
-  padding: 12px 14px;
-  border-radius: var(--radius-m);
-  background: var(--sand-wash);
-  font-size: 14px;
-  color: var(--ink-soft);
-}
-.demo-note strong {
-  color: var(--ink);
-}
 /* Botão com cara de link (ex.: "Esqueci minha senha"). */
 .link-btn {
   padding: 0;
@@ -1346,50 +1336,11 @@ select.input {
   color: var(--ink-faint);
 }
 
-/* ---------- Login de demonstração ---------- */
+/* ---------- Botão grande e divisória da entrada ---------- */
 
 .btn--large {
   min-height: 48px;
   font-size: 16px;
-}
-.demo-entry {
-  display: grid;
-  gap: 10px;
-}
-.demo-entry__hint {
-  font-size: 13.5px;
-  color: var(--ink-soft);
-}
-.demo-more {
-  font-size: 13.5px;
-  color: var(--ink-soft);
-}
-.demo-more summary {
-  cursor: pointer;
-  color: var(--navy);
-  font-weight: 500;
-  width: fit-content;
-}
-.demo-more dl {
-  margin: 10px 0 0;
-  display: grid;
-  gap: 6px;
-}
-.demo-more dl div {
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 8px 10px;
-  background: var(--paper);
-  border-radius: var(--radius-s);
-}
-.demo-more dt {
-  font-weight: 500;
-  color: var(--ink);
-}
-.demo-more dd {
-  margin: 0;
-  font-variant-numeric: tabular-nums;
 }
 .login__divider {
   display: flex;

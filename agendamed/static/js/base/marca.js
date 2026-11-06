@@ -40,24 +40,3 @@ function applyClinicTheme(colors) {
     .querySelector('meta[name="theme-color"]')
     ?.setAttribute("content", colors.ink);
 }
-
-/**
- * Bloco com a marca da clínica (iniciais e nome). Hoje nenhuma tela usa esta função.
- */
-function clinicHeader() {
-  return h(
-    "div",
-    { class: "clinic-mark" },
-    h(
-      "span",
-      { class: "clinic-mark__logo", "aria-hidden": "true" },
-      CLINIC_BRAND.initials,
-    ),
-    h(
-      "div",
-      null,
-      h("p", { class: "clinic-mark__name" }, CLINIC_BRAND.name),
-      h("p", { class: "clinic-mark__tagline" }, CLINIC_BRAND.tagline),
-    ),
-  );
-}

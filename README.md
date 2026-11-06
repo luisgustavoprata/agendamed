@@ -277,7 +277,7 @@ pytest --cov                       # testes + relatório de cobertura
 ruff check .                       # lint
 ```
 
-São **54 testes** entre unitários (regras de agenda, validação de CPF) e de integração (API
+São **110 testes** entre unitários (regras de agenda, validação de CPF) e de integração (API
 completa, interface web, documentação e segurança, contra um banco SQLite temporário e
 isolado por teste). O GitHub Actions roda lint, testes em Python 3.12 e 3.13 e o build da
 imagem Docker a cada push.
